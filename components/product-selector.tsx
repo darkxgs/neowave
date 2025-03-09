@@ -84,7 +84,7 @@ export function ProductSelector() {
 
   return (
     <Card className="bg-[#1B2531] border-[#2a3744]">
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
         <CardTitle className="text-[#40C4FF] text-xl font-normal">Product Selector</CardTitle>
         <Button 
           variant="outline" 
@@ -97,36 +97,44 @@ export function ProductSelector() {
       </CardHeader>
       <CardContent>
         {/* Steps indicator */}
-        <div className="flex mb-6">
-          <div className={`flex-1 text-center ${step >= 1 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
+        <div className="flex items-center justify-between mb-8 relative">
+          {/* Line connecting steps */}
+          <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-700" style={{ top: '16px', zIndex: 0 }}></div>
+          
+          {/* Step circles */}
+          <div className={`relative z-10 text-center ${step >= 1 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
             <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center mb-1 ${step >= 1 ? 'bg-[#40C4FF]' : 'bg-gray-700'}`}>
               <span className="text-white">1</span>
             </div>
-            <span className="text-xs">Category</span>
+            <span className="text-xs block">Category</span>
           </div>
-          <div className={`flex-1 text-center ${step >= 2 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
+          
+          <div className={`relative z-10 text-center ${step >= 2 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
             <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center mb-1 ${step >= 2 ? 'bg-[#40C4FF]' : 'bg-gray-700'}`}>
               <span className="text-white">2</span>
             </div>
-            <span className="text-xs">Type</span>
+            <span className="text-xs block">Type</span>
           </div>
-          <div className={`flex-1 text-center ${step >= 3 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
+          
+          <div className={`relative z-10 text-center ${step >= 3 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
             <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center mb-1 ${step >= 3 ? 'bg-[#40C4FF]' : 'bg-gray-700'}`}>
               <span className="text-white">3</span>
             </div>
-            <span className="text-xs">Filter</span>
+            <span className="text-xs block">Filter</span>
           </div>
-          <div className={`flex-1 text-center ${step >= 4 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
+          
+          <div className={`relative z-10 text-center ${step >= 4 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
             <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center mb-1 ${step >= 4 ? 'bg-[#40C4FF]' : 'bg-gray-700'}`}>
               <span className="text-white">4</span>
             </div>
-            <span className="text-xs">Model</span>
+            <span className="text-xs block">Model</span>
           </div>
-          <div className={`flex-1 text-center ${step >= 5 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
+          
+          <div className={`relative z-10 text-center ${step >= 5 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
             <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center mb-1 ${step >= 5 ? 'bg-[#40C4FF]' : 'bg-gray-700'}`}>
               <span className="text-white">5</span>
             </div>
-            <span className="text-xs">Specs</span>
+            <span className="text-xs block">Specs</span>
           </div>
         </div>
 
@@ -135,17 +143,65 @@ export function ProductSelector() {
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-white">Select Product Category</h3>
             <div className="space-y-2">
-              {categories.map(category => (
-                <Button
-                  key={category.id}
-                  variant="outline"
-                  className="w-full justify-between text-left text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
-                  onClick={() => handleCategorySelect(category.id)}
-                >
-                  {category.name}
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
-              ))}
+              {/* I/O modules and data transmission */}
+              <Button
+                variant="outline"
+                className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+                onClick={() => handleCategorySelect("io-modules")}
+              >
+                I/O modules and data transmission
+                <ChevronRight className="h-5 w-5 ml-2" />
+              </Button>
+              
+              {/* Sensors and Switches */}
+              <Button
+                variant="outline"
+                className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+                onClick={() => handleCategorySelect("sensors")}
+              >
+                Sensors and Switches
+                <ChevronRight className="h-5 w-5 ml-2" />
+              </Button>
+              
+              {/* HVAC control */}
+              <Button
+                variant="outline"
+                className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+                onClick={() => handleCategorySelect("hvac")}
+              >
+                HVAC control
+                <ChevronRight className="h-5 w-5 ml-2" />
+              </Button>
+              
+              {/* Power & Energy */}
+              <Button
+                variant="outline"
+                className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+                onClick={() => handleCategorySelect("power")}
+              >
+                Power & Energy
+                <ChevronRight className="h-5 w-5 ml-2" />
+              </Button>
+              
+              {/* Life Safety Systems */}
+              <Button
+                variant="outline"
+                className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+                onClick={() => handleCategorySelect("safety")}
+              >
+                Life Safety Systems
+                <ChevronRight className="h-5 w-5 ml-2" />
+              </Button>
+              
+              {/* Industrial Switches */}
+              <Button
+                variant="outline"
+                className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+                onClick={() => handleCategorySelect("industrial")}
+              >
+                Industrial Switches
+                <ChevronRight className="h-5 w-5 ml-2" />
+              </Button>
             </div>
           </div>
         )}
@@ -169,11 +225,11 @@ export function ProductSelector() {
                 <Button
                   key={type.id}
                   variant="outline"
-                  className="w-full justify-between text-left text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+                  className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
                   onClick={() => handleTypeSelect(type.id)}
                 >
                   {type.name}
-                  <ChevronRight className="h-4 w-4 ml-2" />
+                  <ChevronRight className="h-5 w-5 ml-2" />
                 </Button>
               ))}
             </div>
