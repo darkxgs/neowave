@@ -1,5 +1,5 @@
 {
-  "buildCommand": "rm -f app/\\(auth\\)/login/page.tsx app/\\(main\\)/login/page.tsx && next build",
+  "buildCommand": "next build",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs"
 } 

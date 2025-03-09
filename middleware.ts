@@ -1,12 +1,10 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+
+// Protected routes that require authentication
+const protectedRoutes = ["/admin", "/admin/data-entry"]
 
 export function middleware(request: NextRequest) {
-  // Get the pathname
   const path = request.nextUrl.pathname
-
-  // Define protected routes
-  const protectedRoutes = ["/admin"]
 
   // Check if the path is protected
   const isProtectedRoute = protectedRoutes.some((route) => path.startsWith(route))
@@ -16,13 +14,13 @@ export function middleware(request: NextRequest) {
 
   // Handle protected routes
   if (isProtectedRoute && !authCookie) {
-    const url = new URL("/admin-login", request.url)
+    const url = new URL("/login", request.url)
     url.searchParams.set("from", path)
     return NextResponse.redirect(url)
   }
 
   // Redirect from login if already authenticated
-  if ((path === "/admin-login" || path === "/user-login") && authCookie) {
+  if (path === "/login" && authCookie) {
     return NextResponse.redirect(new URL("/admin/data-entry", request.url))
   }
 
