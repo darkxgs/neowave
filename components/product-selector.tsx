@@ -46,7 +46,7 @@ export function ProductSelector() {
     setSelectedFilters(prev => {
       if (prev.includes(filterId)) {
         return prev.filter(id => id !== filterId)
-      } else {
+    } else {
         return [...prev, filterId]
       }
     })
@@ -84,57 +84,49 @@ export function ProductSelector() {
 
   return (
     <Card className="bg-[#1B2531] border-[#2a3744]">
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <CardTitle className="text-[#40C4FF] text-xl font-normal">Product Selector</CardTitle>
-        <Button 
-          variant="outline" 
+      <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-[#40C4FF] text-xl font-normal">Product Selector</CardTitle>
+          <Button
+            variant="outline"
           size="sm" 
           onClick={resetSelection}
-          className="text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
-        >
-          Reset
-        </Button>
-      </CardHeader>
+            className="text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+          >
+            Reset
+          </Button>
+        </CardHeader>
       <CardContent>
         {/* Steps indicator */}
-        <div className="flex items-center justify-between mb-8 relative">
-          {/* Line connecting steps */}
-          <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-700" style={{ top: '16px', zIndex: 0 }}></div>
-          
-          {/* Step circles */}
-          <div className={`relative z-10 text-center ${step >= 1 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
+        <div className="flex mb-6">
+          <div className={`flex-1 text-center ${step >= 1 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
             <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center mb-1 ${step >= 1 ? 'bg-[#40C4FF]' : 'bg-gray-700'}`}>
               <span className="text-white">1</span>
             </div>
-            <span className="text-xs block">Category</span>
+            <span className="text-xs">Category</span>
           </div>
-          
-          <div className={`relative z-10 text-center ${step >= 2 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
+          <div className={`flex-1 text-center ${step >= 2 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
             <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center mb-1 ${step >= 2 ? 'bg-[#40C4FF]' : 'bg-gray-700'}`}>
               <span className="text-white">2</span>
             </div>
-            <span className="text-xs block">Type</span>
+            <span className="text-xs">Type</span>
           </div>
-          
-          <div className={`relative z-10 text-center ${step >= 3 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
+          <div className={`flex-1 text-center ${step >= 3 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
             <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center mb-1 ${step >= 3 ? 'bg-[#40C4FF]' : 'bg-gray-700'}`}>
               <span className="text-white">3</span>
             </div>
-            <span className="text-xs block">Filter</span>
+            <span className="text-xs">Filter</span>
           </div>
-          
-          <div className={`relative z-10 text-center ${step >= 4 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
+          <div className={`flex-1 text-center ${step >= 4 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
             <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center mb-1 ${step >= 4 ? 'bg-[#40C4FF]' : 'bg-gray-700'}`}>
               <span className="text-white">4</span>
             </div>
-            <span className="text-xs block">Model</span>
+            <span className="text-xs">Model</span>
           </div>
-          
-          <div className={`relative z-10 text-center ${step >= 5 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
+          <div className={`flex-1 text-center ${step >= 5 ? 'text-[#40C4FF]' : 'text-gray-500'}`}>
             <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center mb-1 ${step >= 5 ? 'bg-[#40C4FF]' : 'bg-gray-700'}`}>
               <span className="text-white">5</span>
             </div>
-            <span className="text-xs block">Specs</span>
+            <span className="text-xs">Specs</span>
           </div>
         </div>
 
@@ -143,65 +135,17 @@ export function ProductSelector() {
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-white">Select Product Category</h3>
             <div className="space-y-2">
-              {/* I/O modules and data transmission */}
+              {categories.map(category => (
               <Button
+                  key={category.id}
                 variant="outline"
-                className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
-                onClick={() => handleCategorySelect("io-modules")}
-              >
-                I/O modules and data transmission
-                <ChevronRight className="h-5 w-5 ml-2" />
-              </Button>
-              
-              {/* Sensors and Switches */}
-              <Button
-                variant="outline"
-                className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
-                onClick={() => handleCategorySelect("sensors")}
-              >
-                Sensors and Switches
-                <ChevronRight className="h-5 w-5 ml-2" />
-              </Button>
-              
-              {/* HVAC control */}
-              <Button
-                variant="outline"
-                className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
-                onClick={() => handleCategorySelect("hvac")}
-              >
-                HVAC control
-                <ChevronRight className="h-5 w-5 ml-2" />
-              </Button>
-              
-              {/* Power & Energy */}
-              <Button
-                variant="outline"
-                className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
-                onClick={() => handleCategorySelect("power")}
-              >
-                Power & Energy
-                <ChevronRight className="h-5 w-5 ml-2" />
-              </Button>
-              
-              {/* Life Safety Systems */}
-              <Button
-                variant="outline"
-                className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
-                onClick={() => handleCategorySelect("safety")}
-              >
-                Life Safety Systems
-                <ChevronRight className="h-5 w-5 ml-2" />
-              </Button>
-              
-              {/* Industrial Switches */}
-              <Button
-                variant="outline"
-                className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
-                onClick={() => handleCategorySelect("industrial")}
-              >
-                Industrial Switches
-                <ChevronRight className="h-5 w-5 ml-2" />
-              </Button>
+                  className="w-full justify-between text-left text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+                  onClick={() => handleCategorySelect(category.id)}
+                >
+                  {category.name}
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              ))}
             </div>
           </div>
         )}
@@ -219,26 +163,26 @@ export function ProductSelector() {
               >
                 Back
               </Button>
-            </div>
+          </div>
             <div className="space-y-2">
               {availableTypes.map(type => (
-                <Button
-                  key={type.id}
+                      <Button
+                        key={type.id}
                   variant="outline"
-                  className="w-full justify-between text-left py-3 text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
-                  onClick={() => handleTypeSelect(type.id)}
-                >
-                  {type.name}
-                  <ChevronRight className="h-5 w-5 ml-2" />
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
+                  className="w-full justify-between text-left text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+                        onClick={() => handleTypeSelect(type.id)}
+                      >
+                        {type.name}
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    ))}
+                </div>
+              </div>
+            )}
 
         {/* Step 3: Filter Selection */}
         {step === 3 && (
-          <div className="space-y-4">
+                <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-medium text-white">Select Filters (Optional)</h3>
               <Button 
@@ -248,8 +192,8 @@ export function ProductSelector() {
                 className="text-[#40C4FF] hover:bg-[#2a3744]"
               >
                 Back
-              </Button>
-            </div>
+                  </Button>
+                </div>
             <div className="flex flex-wrap gap-2 mb-4">
               {availableFilters.length > 0 ? (
                 availableFilters.map(filter => (
@@ -272,15 +216,15 @@ export function ProductSelector() {
               ) : (
                 <p className="text-gray-400 text-sm">No filters available for this type.</p>
               )}
-            </div>
-            <Button 
+                  </div>
+                      <Button
               onClick={handleContinueToModels}
               className="w-full bg-[#40C4FF] text-white hover:bg-blue-400"
             >
               Continue
-            </Button>
-          </div>
-        )}
+                      </Button>
+              </div>
+            )}
 
         {/* Step 4: Model Selection */}
         {step === 4 && (
@@ -295,7 +239,7 @@ export function ProductSelector() {
               >
                 Back
               </Button>
-            </div>
+                </div>
             <div className="space-y-2">
               {availableModels.map(model => (
                 <div
@@ -317,13 +261,13 @@ export function ProductSelector() {
                     </div>
                   </div>
                   <Badge className="bg-[#40C4FF]">{model.typeName}</Badge>
-                </div>
+              </div>
               ))}
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            </div>
+          )}
+        </CardContent>
+      </Card>
   )
 }
 

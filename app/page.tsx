@@ -15,35 +15,33 @@ export default function Home() {
   const { isAuthenticated } = useAuth()
 
   return (
-    <main className="min-h-screen p-6 mx-auto" style={{ backgroundColor: "#141C26" }}>
-      <div className="max-w-6xl mx-auto">
+    <main className="min-h-screen mx-auto" style={{ background: "#161F2B" }}>
+      <div className="container p-4 mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-light text-[#40C4FF]">Product Code Generator</h1>
-          <div className="flex items-center">
-            {isAuthenticated && (
-              <Button 
-                onClick={() => router.push("/admin/data-entry")} 
-                variant="outline" 
-                className="text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744] mr-4"
-              >
-                <Database className="mr-2 h-4 w-4" />
-                Data Entry
-              </Button>
-            )}
+          {isAuthenticated && (
             <Button 
-              onClick={() => router.push("/login")} 
+              onClick={() => router.push("/admin/data-entry")} 
               variant="outline" 
-              className="text-white border-[#3a4754] hover:bg-[#2a3744]"
+              className="text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
             >
-              LOGIN
+              <Database className="mr-2 h-4 w-4" />
+              Data Entry
             </Button>
-          </div>
+          )}
         </div>
         
-        <div className="space-y-6">
+        {/* Full-width product selector */}
+        <div className="mb-6">
           <ProductSelector />
-          {selectedProducts.length > 0 && <SelectedProductViewer />}
         </div>
+        
+        {/* Selected products below */}
+        {selectedProducts.length > 0 && (
+          <div>
+            <SelectedProductViewer />
+          </div>
+        )}
       </div>
     </main>
   )
