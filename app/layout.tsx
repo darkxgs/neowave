@@ -11,7 +11,7 @@ import { LoginButton } from "@/components/login-button"
 export const metadata: Metadata = {
   title: "Neo Wave Product Generator",
   description: "Generate product codes for Neo Wave sensors and devices",
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
