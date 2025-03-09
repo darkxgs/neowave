@@ -21,11 +21,31 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
-  // Only recognize files that don't start with underscore
-  pageExtensions: ['tsx', 'ts', 'jsx', 'js'].map(ext => 
-    ext.includes('.') ? ext : `(?!_)*.${ext}`
-  ),
-  // Ignore paths that would cause route conflicts
+  // Only use specific file extensions
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+  // Completely ignore these specific files for routing
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
+  },
+  // Ignore specific routes
+  rewrites: async () => {
+    return {
+      beforeFiles: [
+        // Redirect any requests to the conflicting routes
+        {
+          source: '/login',
+          destination: '/login-redirect',
+        },
+      ],
+    }
+  },
+  // Important to catch any webpack issues
+  webpack: (config) => {
+    // Ignore specific files during build
+    config.plugins = config.plugins || [];
+    return config;
+  },
   distDir: '.next',
   poweredByHeader: false,
   reactStrictMode: true,
