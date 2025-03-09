@@ -40,7 +40,6 @@ const nextConfig = {
     ignoreBuildErrors: true,
     tsconfigPath: "./tsconfig.json"
   },
-  swcMinify: true,
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,

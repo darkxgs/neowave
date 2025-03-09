@@ -7,8 +7,8 @@
     "clean": "node clean-lockfiles.js",
     "fix-routes": "node fix-routes.js",
     "preinstall": "node clean-lockfiles.js",
-    "prebuild": "node fix-routes.js",
-    "build": "bash vercel-build.sh || next build",
+    "prebuild": "npm run clean && npm run fix-routes",
+    "build": "next build",
     "vercel-build": "bash vercel-build.sh",
     "start": "next start",
     "lint": "next lint"
