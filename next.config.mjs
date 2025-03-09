@@ -16,20 +16,16 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // In Next.js 15.x, the default output is 'export'
-  // For server components, we need 'standalone'
-  output: 'standalone',
-  // Disable experimental features that might be causing issues
+  // Remove standalone output mode as it's causing issues
+  output: undefined,
+  // Disable experimental features
   experimental: {
-    // These are known to cause issues with the standalone output
     webpackBuildWorker: false,
     parallelServerBuildTraces: false,
     parallelServerCompiles: false,
   },
   // Only use specific file extensions
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
-  // Increase timeouts for build process
-  staticPageGenerationTimeout: 120,
   // Other standard options
   compress: true,
   poweredByHeader: false,
