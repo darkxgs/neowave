@@ -15,9 +15,9 @@ export default function Home() {
   const { isAuthenticated } = useAuth()
 
   return (
-    <main className="min-h-screen mx-auto" style={{ background: "#161F2B" }}>
-      <div className="container p-4 mx-auto">
-        <div className="flex justify-between items-center mb-6">
+    <main className="container min-h-screen p-4 mx-auto">
+      <div className="flex flex-col gap-8">
+        <div className="flex justify-between items-center">
           <h1 className="text-3xl font-light text-[#40C4FF]">Product Code Generator</h1>
           {isAuthenticated && (
             <Button 
@@ -31,17 +31,10 @@ export default function Home() {
           )}
         </div>
         
-        {/* Full-width product selector */}
-        <div className="mb-6">
+        <div className="grid md:grid-cols-2 gap-6">
           <ProductSelector />
+          {selectedProducts.length > 0 && <SelectedProductViewer />}
         </div>
-        
-        {/* Selected products below */}
-        {selectedProducts.length > 0 && (
-          <div>
-            <SelectedProductViewer />
-          </div>
-        )}
       </div>
     </main>
   )

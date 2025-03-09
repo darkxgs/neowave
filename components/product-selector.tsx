@@ -263,7 +263,7 @@ export function ProductSelector() {
                   <Badge className="bg-[#40C4FF]">{model.typeName}</Badge>
               </div>
               ))}
-            </div>
+              </div>
             </div>
           )}
         </CardContent>
