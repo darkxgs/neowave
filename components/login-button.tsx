@@ -1,50 +1,34 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { LogIn, LogOut } from "lucide-react"
-import { useAuth } from "@/lib/AuthContext"
-import { logout } from "@/app/actions"
+import { useAuthContext } from "@/lib/AuthContext"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 export function LoginButton() {
+  const { isAuthenticated, logout } = useAuthContext()
   const router = useRouter()
-  const { isAuthenticated, checkAuth } = useAuth()
 
-  const handleLogout = async () => {
-    await logout()
-    checkAuth()
-    router.push("/")
-  }
-
-  const handleLogin = () => {
-    router.push("/login")
-    checkAuth()
+  if (isAuthenticated) {
+    return (
+      <Button 
+        variant="outline" 
+        className="text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+        onClick={logout}
+      >
+        LOGOUT
+      </Button>
+    )
   }
 
   return (
-    <>
-      {isAuthenticated ? (
-        <Button
-          onClick={handleLogout}
-          variant="outline"
-          size="sm"
-          className="text-white hover:text-[#40C4FF] hover:bg-[#2a3744]"
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          LOGOUT
-        </Button>
-      ) : (
-        <Button
-          onClick={handleLogin}
-          variant="outline"
-          size="sm"
-          className="text-white hover:text-[#40C4FF] hover:bg-[#2a3744]"
-        >
-          <LogIn className="h-4 w-4 mr-2" />
-          LOGIN
-        </Button>
-      )}
-    </>
+    <Button
+      variant="outline"
+      className="text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+      asChild
+    >
+      <Link href="/login">LOGIN</Link>
+    </Button>
   )
 }
 

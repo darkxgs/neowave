@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Copy, Check, Thermometer, Wind, Gauge, Ruler, Download } from "lucide-react"
+import { Copy, Check, Thermometer, Wind, Gauge, Ruler, Download, ChevronRight, RotateCcw } from "lucide-react"
 import { sensorTypes, modelSpecifications, sensorModels } from "@/lib/data"
 import { toast } from "sonner"
 import Image from "next/image"
@@ -13,8 +13,9 @@ import { SelectionProgress } from "./selection-progress"
 import { FilterOption } from "./filter-option"
 // import { ProductDetails } from "./product-details"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/AuthContext"
+import { useAuthContext } from "@/lib/AuthContext"
 import { useCategories } from "@/lib/CategoryContext"
+import { useProductContext } from "@/lib/ProductContext"
 
 const STEPS = ["category", "type", "filter", "model", "specs"]
 
@@ -47,37 +48,22 @@ const modelCharacteristics = {
 }
 
 export function ProductSelector() {
-  const [step, setStep] = useState<"category" | "type" | "filter" | "model" | "specs">("category")
-  const [selectedCategory, setSelectedCategory] = useState("")
-  const [selectedType, setSelectedType] = useState("")
-  const [model, setModel] = useState("")
+  const [activeStep, setActiveStep] = useState(1)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedType, setSelectedType] = useState<string | null>(null)
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null)
+  const [selectedModel, setSelectedModel] = useState<string | null>(null)
+  const [selectedSpecs, setSelectedSpecs] = useState<Record<string, string>>({})
   const [copied, setCopied] = useState(false)
-  const [specs, setSpecs] = useState<Record<string, string>>({})
-  const [filters, setFilters] = useState<Record<string, boolean>>({
-    duct: false,
-    water: false,
-    outdoor: false,
-    indoor: false,
-    tempHumidity: false,
-    tempOnly: false,
-    co: false,
-    co2: false,
-    voc: false,
-    wallMounted: false,
-    ductMounted: false,
-    switches: false,
-    sensors: false,
-    liquid: false,
-    air: false,
-  })
   const [description, setDescription] = useState("")
   const [productCode, setProductCode] = useState("")
   const [customProducts, setCustomProducts] = useState<any[]>([])
   const [availableFilters, setAvailableFilters] = useState<any[]>([])
 
   const router = useRouter()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuthContext()
   const { categories, isLoading } = useCategories()
+  const { addProduct } = useProductContext()
 
   useEffect(() => {
     const fetchCustomProducts = async () => {
@@ -126,22 +112,18 @@ export function ProductSelector() {
 
   useEffect(() => {
     // Reset filters when type changes
-    setFilters((prev) => {
-      const newFilters: Record<string, boolean> = {}
-      // Copy over predefined filters
-      Object.keys(prev).forEach((key) => {
-        newFilters[key] = false
-      })
+    setSelectedSpecs((prev) => {
+      const newSpecs = {}
       // Add custom filters
       availableFilters.forEach((filter) => {
-        newFilters[filter.id] = false
+        newSpecs[filter.id] = ""
       })
-      return newFilters
+      return newSpecs
     })
   }, [selectedType, availableFilters])
 
   const selectedSensorType = sensorTypes.find((type) => type.id === selectedType)
-  const selectedModel = model ? modelSpecifications[model as keyof typeof modelSpecifications] : null
+  const selectedModelData = selectedModel ? modelSpecifications[selectedModel as keyof typeof modelSpecifications] : null
 
   const getSensorIcon = (type: string) => {
     switch (type) {
@@ -161,25 +143,25 @@ export function ProductSelector() {
   }
 
   const getRequiredSpecs = () => {
-    if (!selectedType || !model) return []
+    if (!selectedType || !selectedModelData) return []
 
     const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === model.split("-")[0],
+      (product) => product.code && product.code.split("-")[0] === selectedModelData.id.split("-")[0],
     )
     if (customProduct) {
       console.log("Found custom product specs:", customProduct.specifications)
       return customProduct.specifications.map((spec: any) => spec.name)
     }
 
-    if (!selectedModel) return []
-    return Object.keys(selectedModel.availableOptions)
+    if (!selectedModelData) return []
+    return Object.keys(selectedModelData.availableOptions)
   }
 
   const getSpecOptions = (specType: string) => {
-    if (!selectedType || !model) return []
+    if (!selectedType || !selectedModelData) return []
 
     const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === model.split("-")[0],
+      (product) => product.code && product.code.split("-")[0] === selectedModelData.id.split("-")[0],
     )
     if (customProduct) {
       console.log("Getting spec options for:", specType)
@@ -191,7 +173,7 @@ export function ProductSelector() {
       return []
     }
 
-    const availableOptions = selectedModel.availableOptions[specType]
+    const availableOptions = selectedModelData.availableOptions[specType]
     if (!availableOptions) return []
 
     try {
@@ -221,10 +203,10 @@ export function ProductSelector() {
   }
 
   const generateProductCode = (currentSpecs: Record<string, string>) => {
-    if (!selectedType || !model) return ""
+    if (!selectedType || !selectedModelData) return ""
 
     const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === model.split("-")[0],
+      (product) => product.code && product.code.split("-")[0] === selectedModelData.id.split("-")[0],
     )
 
     // Handle custom products
@@ -250,9 +232,8 @@ export function ProductSelector() {
     }
 
     // Handle standard models
-    const modelSpec = modelSpecifications[model as keyof typeof modelSpecifications]
-    if (!modelSpec) {
-      console.error("Model specifications not found:", model)
+    if (!selectedModelData) {
+      console.error("Model specifications not found:", selectedModelData)
       return ""
     }
 
@@ -267,7 +248,7 @@ export function ProductSelector() {
     }
 
     try {
-      const code = modelSpec.generateCode(currentSpecs)
+      const code = selectedModelData.generateCode(currentSpecs)
       if (!code) {
         toast.error("Unable to generate product code. Please check your selections.")
         return ""
@@ -282,7 +263,7 @@ export function ProductSelector() {
 
   const handleSpecChange = (specType: string, value: string) => {
     console.log("Changing spec for custom product:", specType, "to value:", value)
-    setSpecs((prev) => {
+    setSelectedSpecs((prev) => {
       const newSpecs = { ...prev, [specType]: value }
       console.log("New specs state for custom product:", newSpecs)
       const newCode = generateProductCode(newSpecs)
@@ -294,32 +275,15 @@ export function ProductSelector() {
     })
   }
 
-  const resetSelections = () => {
-    setStep("category")
-    setSelectedCategory("")
-    setSelectedType("")
-    setModel("")
-    setSpecs({})
-    setFilters({
-      duct: false,
-      water: false,
-      outdoor: false,
-      indoor: false,
-      tempHumidity: false,
-      tempOnly: false,
-      co: false,
-      co2: false,
-      voc: false,
-      wallMounted: false,
-      ductMounted: false,
-      switches: false,
-      sensors: false,
-      liquid: false,
-      air: false,
-    })
+  const resetSelection = () => {
+    setActiveStep(1)
+    setSelectedCategory(null)
+    setSelectedType(null)
+    setSelectedFilter(null)
+    setSelectedModel(null)
+    setSelectedSpecs({})
     setProductCode("")
     setDescription("")
-    // setComparisonList([])
   }
 
   const copyToClipboard = async (text: string, type: "code" | "description") => {
@@ -365,40 +329,22 @@ export function ProductSelector() {
     }
   }
 
-  // const addToComparison = () => {
-  //   const productCode = generateProductCode()
-  //   if (productCode && !comparisonList.includes(productCode)) {
-  //     setComparisonList((prev) => [...prev, productCode])
-  //     toast.success("Product added to comparison")
-  //   } else if (comparisonList.includes(productCode)) {
-  //     toast.error("This product is already in the comparison list")
-  //   }
-  // }
-
-  // const removeFromComparison = (productCode: string) => {
-  //   setComparisonList((prev) => prev.filter((code) => code !== productCode))
-  // }
-
-  // Let's update the filter handling in the ProductSelector component to ensure filters are properly applied
-
-  // Find the handleFilterApply function and update it
   const handleFilterApply = () => {
     // Log active filters for debugging
-    const activeFilters = Object.entries(filters)
+    const activeFilters = Object.entries(selectedSpecs)
       .filter(([_, value]) => value)
       .map(([key]) => key)
 
     console.log("Applying filters:", activeFilters)
 
     // Continue to model selection
-    setStep("model")
+    setActiveStep(4)
   }
 
-  // Updated getFilteredModels function
   const getFilteredModels = (sensorType: any) => {
     // For non-sensor categories, only show custom products
     if (!sensorType?.specifications?.model) {
-      const activeFilters = Object.entries(filters)
+      const activeFilters = Object.entries(selectedSpecs)
         .filter(([_, value]) => value)
         .map(([key]) => key)
 
@@ -444,7 +390,7 @@ export function ProductSelector() {
         }))
     }
 
-    const activeFilters = Object.entries(filters)
+    const activeFilters = Object.entries(selectedSpecs)
       .filter(([_, value]) => value)
       .map(([key]) => key)
 
@@ -493,21 +439,21 @@ export function ProductSelector() {
   }
 
   const getProductDescription = () => {
-    if (!selectedType || !model) return ""
-    const modelSpec = modelSpecifications[model as keyof typeof modelSpecifications]
+    if (!selectedType || !selectedModelData) return ""
+    const modelSpec = modelSpecifications[selectedModelData as keyof typeof modelSpecifications]
     return modelSpec?.description || ""
   }
 
   const getDetailedDescription = () => {
-    if (!selectedType || !model || !specs) return ""
+    if (!selectedType || !selectedModelData || !selectedSpecs) return ""
 
     const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === model.split("-")[0],
+      (product) => product.code && product.code.split("-")[0] === selectedModelData.id.split("-")[0],
     )
     if (customProduct) {
       const specDescriptions = customProduct.specifications
         .map((spec: any) => {
-          const selectedValue = specs[spec.name]
+          const selectedValue = selectedSpecs[spec.name]
           const selectedOption = spec.options.find((opt: any) => opt.value === selectedValue)
           if (!selectedValue) return `${spec.name}: Not selected`
           return `${spec.name}: ${selectedOption?.label || selectedValue}`
@@ -518,8 +464,8 @@ export function ProductSelector() {
     }
 
     // Rest of the function remains the same
-    const modelName = sensorModels[selectedType]?.find((m) => m.id === model)?.name || ""
-    const specDescriptions = Object.entries(specs)
+    const modelName = sensorModels[selectedType]?.find((m) => m.id === selectedModelData?.id)?.name || ""
+    const specDescriptions = Object.entries(selectedSpecs)
       .map(([key, value]) => {
         if (!value) return `${key.replace(/([A-Z])/g, " $1").toLowerCase()}: Not selected`
         const specOptions = getSpecOptions(key)
@@ -533,48 +479,58 @@ export function ProductSelector() {
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId)
-    setStep("type")
+    setActiveStep(2)
+    setSelectedType(null)
+    setSelectedFilter(null)
+    setSelectedModel(null)
   }
 
   const handleTypeSelect = (typeId: string) => {
     setSelectedType(typeId)
     // Skip filter step for types that don't have filters
     if (["level", "flow"].includes(typeId)) {
-      setStep("model")
+      setActiveStep(4)
     } else {
-      setStep("filter")
+      setActiveStep(3)
     }
   }
 
+  const handleFilterSelect = (filterId: string) => {
+    setSelectedFilter(filterId)
+    setActiveStep(4)
+    setSelectedModel(null)
+  }
+
   const handleModelSelect = (modelId: string) => {
-    setModel(modelId)
+    setSelectedModel(modelId)
     setProductCode("")
     setDescription("")
+    setActiveStep(5)
+  }
 
-    const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === modelId.split("-")[0],
-    )
-    if (customProduct) {
-      console.log("Selected custom product:", customProduct)
+  const handleAddProduct = () => {
+    if (!selectedType || !selectedModel) return
 
-      // Initialize specs with empty values for all specifications
-      const initialSpecs = customProduct.specifications.reduce((acc: Record<string, string>, spec: any) => {
-        acc[spec.name] = ""
-        return acc
-      }, {})
-
-      setSpecs(initialSpecs)
-      console.log("Initialized specs:", initialSpecs)
-    } else {
-      setSpecs({})
+    const selectedModelData = sensorModels[selectedType]?.find(model => model.id === selectedModel)
+    
+    if (selectedModelData) {
+      // Find the type info to get the type name
+      const typeInfo = sensorTypes.find(type => type.id === selectedType)
+      
+      addProduct({
+        ...selectedModelData,
+        typeName: typeInfo?.name || "Unknown Type",
+        specs: selectedSpecs
+      })
+      
+      toast.success("Product added to selection")
     }
-    setStep("specs")
   }
 
   const handleDatasheetDownload = () => {
     // First check if it's a custom product
     const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === model.split("-")[0],
+      (product) => product.code && product.code.split("-")[0] === selectedModel?.split("-")[0],
     )
     if (customProduct && customProduct.datasheetUrl) {
       window.open(customProduct.datasheetUrl, "_blank")
@@ -626,7 +582,7 @@ export function ProductSelector() {
       VTRM20: "https://neowave.tech/wp-content/uploads/2024/09/VTRM20-XP-2.pdf", // Alternative code
     }
 
-    const baseModelCode = model.split("-")[0]
+    const baseModelCode = selectedModel?.split("-")[0]
     console.log("Attempting to find datasheet for model:", baseModelCode)
 
     const datasheetUrl = datasheetUrls[baseModelCode]
@@ -643,395 +599,393 @@ export function ProductSelector() {
   }
 
   return (
-    <>
-      <Card className="bg-[#1B2531] border-[#2a3744]" role="region" aria-label="Product Selector">
-        <CardHeader className="flex flex-row items-center justify-between" aria-label="Product Selector Header">
-          <CardTitle className="text-[#40C4FF] text-xl font-normal">Product Selector</CardTitle>
-          <Button
-            onClick={resetSelections}
-            variant="outline"
-            className="text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
-          >
-            Reset
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-6 px-3 sm:px-6">
-          <SelectionProgress steps={STEPS} currentStep={step} />
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h3 className="text-lg font-medium text-gray-200">
-              {step === "category" && "Select Product Category"}
-              {step === "type" && "Select Sensor Type"}
-              {step === "filter" && "Filter Options"}
-              {step === "model" && "Select Model"}
-              {step === "specs" && "Select Specifications"}
-            </h3>
-            {step !== "category" && (
-              <Button
-                onClick={() => {
-                  setStep(STEPS[STEPS.indexOf(step) - 1])
-                  setProductCode("")
-                  setDescription("")
-                }}
-                variant="outline"
-                className="text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
-              >
-                Back
-              </Button>
-            )}
-          </div>
-          <div className="transition-all duration-300 ease-in-out">
-            {step === "category" && (
-              <div className="animate-fadeIn">
-                {isLoading ? (
-                  <div className="text-white">Loading categories...</div>
-                ) : (
-                  <ProductCategorySelector onCategorySelect={handleCategorySelect} />
-                )}
-              </div>
-            )}
+    <Card className="bg-[#1B2531] border-[#2a3744]">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-[#40C4FF] text-xl font-normal">Product Selector</CardTitle>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={resetSelection}
+          className="text-white border-[#3a4754] hover:bg-[#2a3744]"
+        >
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Reset
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <SelectionProgress steps={STEPS} currentStep={activeStep} />
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h3 className="text-lg font-medium text-gray-200">
+            {activeStep === 1 && "Select Product Category"}
+            {activeStep === 2 && "Select Sensor Type"}
+            {activeStep === 3 && "Filter Options"}
+            {activeStep === 4 && "Select Model"}
+            {activeStep === 5 && "Select Specifications"}
+          </h3>
+          {activeStep !== 1 && (
+            <Button
+              onClick={() => {
+                setActiveStep(activeStep - 1)
+                setProductCode("")
+                setDescription("")
+              }}
+              variant="outline"
+              className="text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+            >
+              Back
+            </Button>
+          )}
+        </div>
+        <div className="transition-all duration-300 ease-in-out">
+          {activeStep === 1 && (
+            <div className="animate-fadeIn">
+              {isLoading ? (
+                <div className="text-white">Loading categories...</div>
+              ) : (
+                <ProductCategorySelector onCategorySelect={handleCategorySelect} />
+              )}
+            </div>
+          )}
 
-            {step === "type" && (
-              <div className="animate-fadeIn">
-                <div className="grid grid-cols-2 gap-4">
-                  {categories
-                    .find((c) => c.id === selectedCategory)
-                    ?.types.map((type) => (
-                      <Button
-                        key={type.id}
-                        onClick={() => handleTypeSelect(type.id)}
-                        variant="outline"
-                        className="justify-start text-left text-gray-200 transition-all duration-200 hover:scale-105 whitespace-normal h-auto min-h-[44px] py-2"
-                      >
-                        {selectedCategory === "sensors-switches" && (
-                          <span className="mr-2">{getSensorIcon(type.id)}</span>
-                        )}
-                        {type.name}
-                      </Button>
-                    ))}
-                </div>
-              </div>
-            )}
-
-            {step === "filter" && (
-              <div className="animate-fadeIn">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-200">
-                    {["level", "flow"].includes(selectedType) ? "No filters available" : "Filter Options"}
-                  </h3>
-                  {!["level", "flow"].includes(selectedType) && (
-                    <div className="flex flex-wrap gap-2 w-full overflow-x-hidden">
-                      {/* Only render predefined filters based on the current selected type */}
-                      {selectedType === "temp-humid" && (
-                        <>
-                          <FilterOption
-                            label="Duct"
-                            isActive={filters.duct}
-                            onClick={() => setFilters((prev) => ({ ...prev, duct: !prev.duct }))}
-                            tooltip="Sensors designed for duct installation"
-                          />
-                          <FilterOption
-                            label="Water"
-                            isActive={filters.water}
-                            onClick={() => setFilters((prev) => ({ ...prev, water: !prev.water }))}
-                            tooltip="Sensors for water-related measurements"
-                          />
-                          <FilterOption
-                            label="Outdoor"
-                            isActive={filters.outdoor}
-                            onClick={() => setFilters((prev) => ({ ...prev, outdoor: !prev.outdoor }))}
-                            tooltip="Sensors suitable for outdoor use"
-                          />
-                          <FilterOption
-                            label="Indoor"
-                            isActive={filters.indoor}
-                            onClick={() => setFilters((prev) => ({ ...prev, indoor: !prev.indoor }))}
-                            tooltip="Sensors designed for indoor environments"
-                          />
-                          <FilterOption
-                            label="Temperature & Humidity"
-                            isActive={filters.tempHumidity}
-                            onClick={() => setFilters((prev) => ({ ...prev, tempHumidity: !prev.tempHumidity }))}
-                            tooltip="Sensors that measure both temperature and humidity"
-                          />
-                          <FilterOption
-                            label="Temperature Only"
-                            isActive={filters.tempOnly}
-                            onClick={() => setFilters((prev) => ({ ...prev, tempOnly: !prev.tempOnly }))}
-                            tooltip="Sensors that measure temperature only"
-                          />
-                        </>
+          {activeStep === 2 && (
+            <div className="animate-fadeIn">
+              <div className="grid grid-cols-2 gap-4">
+                {categories
+                  .find((c) => c.id === selectedCategory)
+                  ?.types.map((type) => (
+                    <Button
+                      key={type.id}
+                      onClick={() => handleTypeSelect(type.id)}
+                      variant="outline"
+                      className="justify-start text-left text-gray-200 transition-all duration-200 hover:scale-105 whitespace-normal h-auto min-h-[44px] py-2"
+                    >
+                      {selectedCategory === "sensors-switches" && (
+                        <span className="mr-2">{getSensorIcon(type.id)}</span>
                       )}
-                      {selectedType === "air-quality" && (
-                        <>
-                          <FilterOption
-                            label="Indoor"
-                            isActive={filters.indoor}
-                            onClick={() => setFilters((prev) => ({ ...prev, indoor: !prev.indoor }))}
-                            tooltip="Indoor air quality sensors"
-                          />
-                          <FilterOption
-                            label="Outdoor"
-                            isActive={filters.outdoor}
-                            onClick={() => setFilters((prev) => ({ ...prev, outdoor: !prev.outdoor }))}
-                            tooltip="Outdoor air quality sensors"
-                          />
-                          <FilterOption
-                            label="VOC"
-                            isActive={filters.voc}
-                            onClick={() => setFilters((prev) => ({ ...prev, voc: !prev.voc }))}
-                            tooltip="Volatile Organic Compounds detection"
-                          />
-                          <FilterOption
-                            label="CO"
-                            isActive={filters.co}
-                            onClick={() => setFilters((prev) => ({ ...prev, co: !prev.co }))}
-                            tooltip="Carbon Monoxide detection"
-                          />
-                          <FilterOption
-                            label="CO₂"
-                            isActive={filters.co2}
-                            onClick={() => setFilters((prev) => ({ ...prev, co2: !prev.co2 }))}
-                            tooltip="Carbon Dioxide detection"
-                          />
-                          <FilterOption
-                            label="Wall Mounted"
-                            isActive={filters.wallMounted}
-                            onClick={() => setFilters((prev) => ({ ...prev, wallMounted: !prev.wallMounted }))}
-                            tooltip="Wall mounted sensors"
-                          />
-                          <FilterOption
-                            label="Duct Mounted"
-                            isActive={filters.ductMounted}
-                            onClick={() => setFilters((prev) => ({ ...prev, ductMounted: !prev.ductMounted }))}
-                            tooltip="Duct mounted sensors"
-                          />
-                        </>
-                      )}
-                      {selectedType === "pressure" && (
-                        <>
-                          <FilterOption
-                            label="Switches"
-                            isActive={filters.switches}
-                            onClick={() => setFilters((prev) => ({ ...prev, switches: !prev.switches }))}
-                            tooltip="Pressure switches functionality"
-                          />
-                          <FilterOption
-                            label="Sensors"
-                            isActive={filters.sensors}
-                            onClick={() => setFilters((prev) => ({ ...prev, sensors: !prev.sensors }))}
-                            tooltip="Pressure sensor functionality"
-                          />
-                          <FilterOption
-                            label="Liquid"
-                            isActive={filters.liquid}
-                            onClick={() => setFilters((prev) => ({ ...prev, liquid: !prev.liquid }))}
-                            tooltip="For liquid pressure measurement"
-                          />
-                          <FilterOption
-                            label="Air"
-                            isActive={filters.air}
-                            onClick={() => setFilters((prev) => ({ ...prev, air: !prev.air }))}
-                            tooltip="For air pressure measurement"
-                          />
-                        </>
-                      )}
-
-                      {/* Only render custom filters for the current selected type */}
-                      {availableFilters
-                        .filter((filter) => filter.typeId === selectedType)
-                        .map((filter) => (
-                          <FilterOption
-                            key={filter.id}
-                            label={filter.name}
-                            isActive={filters[filter.id] || false}
-                            onClick={() => setFilters((prev) => ({ ...prev, [filter.id]: !prev[filter.id] }))}
-                            tooltip={`Custom filter: ${filter.name}`}
-                          />
-                        ))}
-                    </div>
-                  )}
-                  <Button onClick={handleFilterApply} className="w-full bg-[#40C4FF] text-white hover:bg-blue-400">
-                    {["level", "flow"].includes(selectedType) ? "Continue to Model Selection" : "Apply Filters"}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {step === "model" && (
-              <div className="animate-fadeIn">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-gray-200">Select Model</h3>
-                  </div>
-                  {console.log("Available models for type:", selectedType, getFilteredModels(selectedSensorType))}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {getFilteredModels(selectedSensorType).map((modelOption: any) => (
-                      <Button
-                        key={modelOption.value}
-                        onClick={() => handleModelSelect(modelOption.value)}
-                        variant="outline"
-                        className="justify-start text-left text-gray-200 whitespace-normal h-auto min-h-[44px] py-2 w-full break-words"
-                      >
-                        {modelOption.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {step === "specs" && (
-              <div className="animate-fadeIn grid gap-4 grid-cols-1 md:grid-cols-2">
-                <div className="md:col-span-2 mb-2">
-                  <p className="text-sm text-gray-400">All specifications are required to generate the product code.</p>
-                </div>
-                {getRequiredSpecs().map((specType) => {
-                  const specOptions = getSpecOptions(specType)
-                  if (!specOptions.length) return null
-
-                  const isRequired = true // All specs are required
-                  const isSelected = !!specs[specType]
-
-                  return (
-                    <div key={specType} className="space-y-2">
-                      <label className="text-sm text-gray-200 capitalize flex items-center gap-1">
-                        {specType.replace(/([A-Z])/g, " $1").toLowerCase()}
-                        {isRequired && <span className="text-red-500">*</span>}
-                      </label>
-                      <Select
-                        value={specs[specType] || ""}
-                        onValueChange={(value) => handleSpecChange(specType, value)}
-                      >
-                        <SelectTrigger
-                          className={`bg-[#1f2937] border-[#374151] text-gray-200 ${
-                            isRequired && !isSelected ? "border-red-500" : ""
-                          }`}
-                        >
-                          <SelectValue placeholder={`Select ${specType.replace(/([A-Z])/g, " $1").toLowerCase()}`} />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#1f2937] border-[#374151]">
-                          {specOptions.map((option: any) => (
-                            <SelectItem
-                              key={option.value}
-                              value={option.value}
-                              className="text-gray-200 hover:bg-[#374151]"
-                            >
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Product Code Display */}
-          {productCode && (
-            <div className="pt-4 space-y-4 border-t border-[#2a3744]">
-              <div>
-                <div className="text-sm text-gray-200">Product Code:</div>
-                <div className="text-lg font-medium text-[#40C4FF] mt-1 break-all" aria-live="polite">
-                  {productCode}
-                </div>
-                <div className="text-sm text-gray-400 mt-2 leading-relaxed" aria-live="polite">
-                  {getDetailedDescription()}
-                </div>
-                {model && (
-                  <div className="mt-4">
-                    {(customProducts.find((p) => p.code === model)?.photoUrl ||
-                      sensorModels[selectedType]?.find((m) => m.id === model)?.imageUrl) && (
-                      <div className="relative w-[200px] h-[200px]">
-                        <Image
-                          src={
-                            customProducts.find((p) => p.code === model)?.photoUrl ||
-                            sensorModels[selectedType]?.find((m) => m.id === model)?.imageUrl ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg"
-                          }
-                          alt={`${model} Product Image`}
-                          fill
-                          className="rounded-lg border border-[#2a3744] object-contain bg-white"
-                          onError={(e) => {
-                            const imgElement = e.target as HTMLImageElement
-                            console.error("Image load error:", {
-                              originalSrc: imgElement.src,
-                              model,
-                              error: e,
-                            })
-                            imgElement.src = "/placeholder.svg"
-                            imgElement.onerror = null
-                          }}
-                          crossOrigin="anonymous"
-                          loading="eager"
-                          priority
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button
-                  onClick={() => copyToClipboard(productCode, "code")}
-                  disabled={!productCode}
-                  className="bg-[#40C4FF] text-white hover:bg-blue-400 whitespace-nowrap"
-                >
-                  {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                  Copy Code
-                </Button>
-                <Button
-                  onClick={() => copyToClipboard(getDetailedDescription(), "description")}
-                  disabled={!model}
-                  className="bg-[#40C4FF] text-white hover:bg-blue-400 whitespace-nowrap"
-                >
-                  Copy Description
-                </Button>
-                {model && (
-                  <Button onClick={handleDatasheetDownload} className="bg-[#40C4FF] text-white hover:bg-blue-400">
-                    Download Datasheet
-                  </Button>
-                )}
+                      {type.name}
+                    </Button>
+                  ))}
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
-      {/* <ComparisonView comparisonList={comparisonList} removeFromComparison={removeFromComparison} /> */}
-    </>
+
+          {activeStep === 3 && (
+            <div className="animate-fadeIn">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-200">
+                  {["level", "flow"].includes(selectedType) ? "No filters available" : "Filter Options"}
+                </h3>
+                {!["level", "flow"].includes(selectedType) && (
+                  <div className="flex flex-wrap gap-2 w-full overflow-x-hidden">
+                    {/* Only render predefined filters based on the current selected type */}
+                    {selectedType === "temp-humid" && (
+                      <>
+                        <FilterOption
+                          label="Duct"
+                          isActive={selectedSpecs.duct}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, duct: !prev.duct }))}
+                          tooltip="Sensors designed for duct installation"
+                        />
+                        <FilterOption
+                          label="Water"
+                          isActive={selectedSpecs.water}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, water: !prev.water }))}
+                          tooltip="Sensors for water-related measurements"
+                        />
+                        <FilterOption
+                          label="Outdoor"
+                          isActive={selectedSpecs.outdoor}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, outdoor: !prev.outdoor }))}
+                          tooltip="Sensors suitable for outdoor use"
+                        />
+                        <FilterOption
+                          label="Indoor"
+                          isActive={selectedSpecs.indoor}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, indoor: !prev.indoor }))}
+                          tooltip="Sensors designed for indoor environments"
+                        />
+                        <FilterOption
+                          label="Temperature & Humidity"
+                          isActive={selectedSpecs.tempHumidity}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, tempHumidity: !prev.tempHumidity }))}
+                          tooltip="Sensors that measure both temperature and humidity"
+                        />
+                        <FilterOption
+                          label="Temperature Only"
+                          isActive={selectedSpecs.tempOnly}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, tempOnly: !prev.tempOnly }))}
+                          tooltip="Sensors that measure temperature only"
+                        />
+                      </>
+                    )}
+                    {selectedType === "air-quality" && (
+                      <>
+                        <FilterOption
+                          label="Indoor"
+                          isActive={selectedSpecs.indoor}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, indoor: !prev.indoor }))}
+                          tooltip="Indoor air quality sensors"
+                        />
+                        <FilterOption
+                          label="Outdoor"
+                          isActive={selectedSpecs.outdoor}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, outdoor: !prev.outdoor }))}
+                          tooltip="Outdoor air quality sensors"
+                        />
+                        <FilterOption
+                          label="VOC"
+                          isActive={selectedSpecs.voc}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, voc: !prev.voc }))}
+                          tooltip="Volatile Organic Compounds detection"
+                        />
+                        <FilterOption
+                          label="CO"
+                          isActive={selectedSpecs.co}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, co: !prev.co }))}
+                          tooltip="Carbon Monoxide detection"
+                        />
+                        <FilterOption
+                          label="CO₂"
+                          isActive={selectedSpecs.co2}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, co2: !prev.co2 }))}
+                          tooltip="Carbon Dioxide detection"
+                        />
+                        <FilterOption
+                          label="Wall Mounted"
+                          isActive={selectedSpecs.wallMounted}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, wallMounted: !prev.wallMounted }))}
+                          tooltip="Wall mounted sensors"
+                        />
+                        <FilterOption
+                          label="Duct Mounted"
+                          isActive={selectedSpecs.ductMounted}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, ductMounted: !prev.ductMounted }))}
+                          tooltip="Duct mounted sensors"
+                        />
+                      </>
+                    )}
+                    {selectedType === "pressure" && (
+                      <>
+                        <FilterOption
+                          label="Switches"
+                          isActive={selectedSpecs.switches}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, switches: !prev.switches }))}
+                          tooltip="Pressure switches functionality"
+                        />
+                        <FilterOption
+                          label="Sensors"
+                          isActive={selectedSpecs.sensors}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, sensors: !prev.sensors }))}
+                          tooltip="Pressure sensor functionality"
+                        />
+                        <FilterOption
+                          label="Liquid"
+                          isActive={selectedSpecs.liquid}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, liquid: !prev.liquid }))}
+                          tooltip="For liquid pressure measurement"
+                        />
+                        <FilterOption
+                          label="Air"
+                          isActive={selectedSpecs.air}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, air: !prev.air }))}
+                          tooltip="For air pressure measurement"
+                        />
+                      </>
+                    )}
+
+                    {/* Only render custom filters for the current selected type */}
+                    {availableFilters
+                      .filter((filter) => filter.typeId === selectedType)
+                      .map((filter) => (
+                        <FilterOption
+                          key={filter.id}
+                          label={filter.name}
+                          isActive={selectedSpecs[filter.id] || false}
+                          onClick={() => setSelectedSpecs((prev) => ({ ...prev, [filter.id]: !prev[filter.id] }))}
+                          tooltip={`Custom filter: ${filter.name}`}
+                        />
+                      ))}
+                  </div>
+                )}
+                <Button onClick={handleFilterApply} className="w-full bg-[#40C4FF] text-white hover:bg-blue-400">
+                  {["level", "flow"].includes(selectedType) ? "Continue to Model Selection" : "Apply Filters"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {activeStep === 4 && (
+            <div className="animate-fadeIn">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-200">Select Model</h3>
+                </div>
+                {console.log("Available models for type:", selectedType, getFilteredModels(selectedSensorType))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {getFilteredModels(selectedSensorType).map((modelOption: any) => (
+                    <Button
+                      key={modelOption.value}
+                      onClick={() => handleModelSelect(modelOption.value)}
+                      variant="outline"
+                      className="justify-start text-left text-gray-200 whitespace-normal h-auto min-h-[44px] py-2 w-full break-words"
+                    >
+                      {modelOption.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeStep === 5 && (
+            <div className="animate-fadeIn grid gap-4 grid-cols-1 md:grid-cols-2">
+              <div className="md:col-span-2 mb-2">
+                <p className="text-sm text-gray-400">All specifications are required to generate the product code.</p>
+              </div>
+              {getRequiredSpecs().map((specType) => {
+                const specOptions = getSpecOptions(specType)
+                if (!specOptions.length) return null
+
+                const isRequired = true // All specs are required
+                const isSelected = !!selectedSpecs[specType]
+
+                return (
+                  <div key={specType} className="space-y-2">
+                    <label className="text-sm text-gray-200 capitalize flex items-center gap-1">
+                      {specType.replace(/([A-Z])/g, " $1").toLowerCase()}
+                      {isRequired && <span className="text-red-500">*</span>}
+                    </label>
+                    <Select
+                      value={selectedSpecs[specType] || ""}
+                      onValueChange={(value) => handleSpecChange(specType, value)}
+                    >
+                      <SelectTrigger
+                        className={`bg-[#1f2937] border-[#374151] text-gray-200 ${
+                          isRequired && !isSelected ? "border-red-500" : ""
+                        }`}
+                      >
+                        <SelectValue placeholder={`Select ${specType.replace(/([A-Z])/g, " $1").toLowerCase()}`} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1f2937] border-[#374151]">
+                        {specOptions.map((option: any) => (
+                          <SelectItem
+                            key={option.value}
+                            value={option.value}
+                            className="text-gray-200 hover:bg-[#374151]"
+                          >
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Product Code Display */}
+        {productCode && (
+          <div className="pt-4 space-y-4 border-t border-[#2a3744]">
+            <div>
+              <div className="text-sm text-gray-200">Product Code:</div>
+              <div className="text-lg font-medium text-[#40C4FF] mt-1 break-all" aria-live="polite">
+                {productCode}
+              </div>
+              <div className="text-sm text-gray-400 mt-2 leading-relaxed" aria-live="polite">
+                {getDetailedDescription()}
+              </div>
+              {selectedModel && (
+                <div className="mt-4">
+                  {(customProducts.find((p) => p.code === selectedModel)?.photoUrl ||
+                    sensorModels[selectedType]?.find((m) => m.id === selectedModel)?.imageUrl) && (
+                    <div className="relative w-[200px] h-[200px]">
+                      <Image
+                        src={
+                          customProducts.find((p) => p.code === selectedModel)?.photoUrl ||
+                          sensorModels[selectedType]?.find((m) => m.id === selectedModel)?.imageUrl ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg" ||
+                          "/placeholder.svg"
+                        }
+                        alt={`${selectedModel} Product Image`}
+                        fill
+                        className="rounded-lg border border-[#2a3744] object-contain bg-white"
+                        onError={(e) => {
+                          const imgElement = e.target as HTMLImageElement
+                          console.error("Image load error:", {
+                            originalSrc: imgElement.src,
+                            model: selectedModel,
+                            error: e,
+                          })
+                          imgElement.src = "/placeholder.svg"
+                          imgElement.onerror = null
+                        }}
+                        crossOrigin="anonymous"
+                        loading="eager"
+                        priority
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                onClick={() => copyToClipboard(productCode, "code")}
+                disabled={!productCode}
+                className="bg-[#40C4FF] text-white hover:bg-blue-400 whitespace-nowrap"
+              >
+                {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                Copy Code
+              </Button>
+              <Button
+                onClick={() => copyToClipboard(getDetailedDescription(), "description")}
+                disabled={!selectedModel}
+                className="bg-[#40C4FF] text-white hover:bg-blue-400 whitespace-nowrap"
+              >
+                Copy Description
+              </Button>
+              {selectedModel && (
+                <Button onClick={handleDatasheetDownload} className="bg-[#40C4FF] text-white hover:bg-blue-400">
+                  Download Datasheet
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
