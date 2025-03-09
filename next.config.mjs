@@ -21,9 +21,15 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
-  // Explicitly ignore these paths during development 
-  // (for production we're disabling them through file renames)
-  pageExtensions: ['tsx', 'ts', 'jsx', 'js']
+  // Only recognize files that don't start with underscore
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'].map(ext => 
+    ext.includes('.') ? ext : `(?!_)*.${ext}`
+  ),
+  // Ignore paths that would cause route conflicts
+  distDir: '.next',
+  poweredByHeader: false,
+  reactStrictMode: true,
+  trailingSlash: false
 }
 
 mergeConfig(nextConfig, userConfig)

@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "clean": "node clean-lockfiles.js",
-    "build": "npm run clean && next build",
+    "fix-routes": "node fix-routes.js",
+    "preinstall": "node clean-lockfiles.js",
+    "prebuild": "node fix-routes.js",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -74,5 +77,8 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
+  },
+  "resolutions": {
+    "date-fns": "^2.30.0"
   }
 }
