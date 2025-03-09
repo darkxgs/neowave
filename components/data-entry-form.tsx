@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -62,6 +63,8 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
   const { filters, addFilter, removeFilter } = useFilters()
   const [newFilterName, setNewFilterName] = useState("")
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
+
+  const router = useRouter()
 
   useEffect(() => {
     if (editingProduct) {
@@ -875,11 +878,21 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
           </Tabs>
 
           <div className="flex justify-between mt-6">
-            {step > 1 && (
-              <Button type="button" onClick={handlePrevious} variant="outline" className="text-white">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Previous
+            <div className="flex space-x-2">
+              {step > 1 && (
+                <Button type="button" onClick={handlePrevious} variant="outline" className="text-white">
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Previous
+                </Button>
+              )}
+              <Button 
+                type="button" 
+                onClick={() => router.push("/")} 
+                variant="outline" 
+                className="text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" /> Back to Product Generator
               </Button>
-            )}
+            </div>
             {step < totalSteps && (
               <Button type="button" onClick={handleNext} className="bg-[#40C4FF] text-white hover:bg-blue-400">
                 Next <ArrowRight className="w-4 h-4 ml-2" />

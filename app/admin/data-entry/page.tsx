@@ -128,17 +128,7 @@ export default function DataEntryPage() {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-light text-[#40C4FF]">Product Data Entry</h1>
-        <Button
-          onClick={() => router.push("/")}
-          variant="outline"
-          className="text-[#40C4FF] border-[#40C4FF] hover:bg-[#2a3744]"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Product Generator
-        </Button>
-      </div>
+      <h1 className="text-3xl font-light text-[#40C4FF] mb-8">Product Data Entry</h1>
       
       <div className="flex justify-end mb-4">
         <DropdownMenu>
