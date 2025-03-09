@@ -4,6 +4,9 @@ import { ProductSelector } from "@/components/product-selector"
 import { useProductContext } from "@/lib/ProductContext"
 import { Button } from "@/components/ui/button"
 
+// Add dynamic marker to avoid static optimization
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   const { selectedProducts, removeProduct } = useProductContext()
 
