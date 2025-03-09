@@ -1,77 +1,48 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import type { ReactNode } from "react"
+import useSWR from "swr"
 
 type AuthContextType = {
   isAuthenticated: boolean
-  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>
-  logout: () => void
-  user: any | null
+  setIsAuthenticated: (value: boolean) => void
+  checkAuth: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: false,
-  login: async () => ({ success: false, error: "Not implemented" }),
-  logout: () => {},
-  user: null,
-})
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export const useAuthContext = () => useContext(AuthContext)
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [user, setUser] = useState<any | null>(null)
-  const router = useRouter()
+  const { data, error, mutate } = useSWR("/api/check-auth", fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  })
 
-  // Check for existing auth on mount
   useEffect(() => {
-    const checkAuth = () => {
-      // Check for authentication token in cookies or localStorage
-      const authToken = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("auth_token="))
-        ?.split("=")[1]
-
-      if (authToken) {
-        setIsAuthenticated(true)
-        // You could also fetch user data here based on the token
-        setUser({ username: "admin" }) // Placeholder user data
-      }
+    console.log("Auth data changed:", data) // Debug log
+    if (data) {
+      setIsAuthenticated(data.authenticated)
     }
+  }, [data])
 
-    checkAuth()
-  }, [])
-
-  const login = async (username: string, password: string) => {
-    try {
-      // This is a simple validation - in a real app, you'd call your API
-      if (username === "admin" && password === "admin123") {
-        // Set cookie
-        document.cookie = "auth_token=authenticated; path=/; max-age=86400"
-        setIsAuthenticated(true)
-        setUser({ username })
-        return { success: true }
-      }
-      return { success: false, error: "Invalid credentials" }
-    } catch (error) {
-      console.error("Login error:", error)
-      return { success: false, error: "An error occurred during login" }
-    }
-  }
-
-  const logout = () => {
-    // Clear auth cookie
-    document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
-    setIsAuthenticated(false)
-    setUser(null)
-    router.push("/")
+  const checkAuth = async () => {
+    console.log("Checking auth...") // Debug log
+    await mutate()
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, user }}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated, checkAuth }}>{children}</AuthContext.Provider>
   )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider")
+  }
+  return context
 }
 
