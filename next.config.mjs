@@ -16,23 +16,25 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // In Next.js 15.x, the default output is 'export'
+  // For server components, we need 'standalone'
+  output: 'standalone',
+  // Disable experimental features that might be causing issues
   experimental: {
-    // Less aggressive optimizations for better compatibility
+    // These are known to cause issues with the standalone output
     webpackBuildWorker: false,
     parallelServerBuildTraces: false,
     parallelServerCompiles: false,
   },
   // Only use specific file extensions
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
-  // Force all pages to be server-side rendered
-  // This helps with CSS hydration issues
-  output: 'standalone',
+  // Increase timeouts for build process
+  staticPageGenerationTimeout: 120,
+  // Other standard options
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
   trailingSlash: false,
-  // Disable default static optimization
-  staticPageGenerationTimeout: 120
 }
 
 mergeConfig(nextConfig, userConfig)
