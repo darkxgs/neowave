@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { login } from "@/app/actions"
 
-export default function UserLoginPage() {
+export default function AdminLoginPage() {
   const router = useRouter()
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -29,7 +29,7 @@ export default function UserLoginPage() {
     try {
       const result = await login(username, password)
       if (result.success) {
-        router.push("/")
+        router.push("/admin/data-entry")
       } else {
         setError(result.error || "Invalid credentials")
       }
@@ -45,8 +45,8 @@ export default function UserLoginPage() {
     <div className="flex justify-center items-center min-h-[calc(100vh-100px)]">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>User Login</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
+          <CardTitle>Admin Login</CardTitle>
+          <CardDescription>Enter your credentials to access the admin area</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -79,12 +79,11 @@ export default function UserLoginPage() {
               {isLoading ? "Logging in..." : "Login"}
             </Button>
             <Button variant="outline" type="button" onClick={() => router.push("/")} className="w-full">
-              Back to Home
+              Back to Product Generator
             </Button>
           </CardFooter>
         </form>
       </Card>
     </div>
   )
-}
-
+} 

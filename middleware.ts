@@ -11,17 +11,18 @@ export function middleware(request: NextRequest) {
   // Check if the path is protected
   const isProtectedRoute = protectedRoutes.some((route) => path.startsWith(route))
 
-  const authCookie = request.cookies.get("auth")
+  // Try both possible cookie names
+  const authCookie = request.cookies.get("auth_token") || request.cookies.get("auth")
 
   // Handle protected routes
   if (isProtectedRoute && !authCookie) {
-    const url = new URL("/admin/auth", request.url)
+    const url = new URL("/admin-login", request.url)
     url.searchParams.set("from", path)
     return NextResponse.redirect(url)
   }
 
   // Redirect from login if already authenticated
-  if (path === "/admin/auth" && authCookie) {
+  if ((path === "/admin-login" || path === "/user-login") && authCookie) {
     return NextResponse.redirect(new URL("/admin/data-entry", request.url))
   }
 

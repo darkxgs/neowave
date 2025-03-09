@@ -21,6 +21,9 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  // Explicitly ignore these paths during development 
+  // (for production we're disabling them through file renames)
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js']
 }
 
 mergeConfig(nextConfig, userConfig)
