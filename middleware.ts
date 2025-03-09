@@ -20,7 +20,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Redirect from login if already authenticated
-  if (path === "/login" && authCookie) {
+  if ((path === "/login" || path === "/admin-login" || path === "/user-login") && authCookie) {
     return NextResponse.redirect(new URL("/admin/data-entry", request.url))
   }
 
