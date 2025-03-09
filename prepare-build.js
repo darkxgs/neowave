@@ -1,11 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 
-// Run this before the Next.js build to prepare the directory structure
-console.log('Preparing app directory structure...');
+// This script only runs during build time on Vercel
+// It doesn't change your local files
+console.log('Preparing app directory structure for deployment...');
 
 function copyFolderRecursiveSync(source, target) {
-  // Check if folder needs to be created or integrated
+  // Check if folder needs to be created
   if (!fs.existsSync(target)) {
     fs.mkdirSync(target, { recursive: true });
   }
@@ -17,22 +18,27 @@ function copyFolderRecursiveSync(source, target) {
       const curSource = path.join(source, file);
       const curTarget = path.join(target, file);
       if (fs.lstatSync(curSource).isDirectory()) {
-        // Skip route groups
+        // Special handling for route groups - flatten them
         if (file.startsWith('(') && file.endsWith(')')) {
           console.log(`🔄 Processing route group: ${file}`);
-          // Instead of copying the route group, process its contents
+          // Process contents of route group
           const routeGroupFiles = fs.readdirSync(curSource);
           routeGroupFiles.forEach(function (rgFile) {
             const rgSource = path.join(curSource, rgFile);
-            // For folders inside route groups, we want to flatten them
             if (fs.lstatSync(rgSource).isDirectory()) {
-              // Create a flattened path by combining group name and folder name
-              const flattenedTarget = path.join(target, rgFile);
+              // For subdirectories, create a new directory with a name that
+              // combines the route group and subdirectory name
+              const flattenedName = rgFile.replace(/page\.tsx$/, `${file.replace(/[()]/g, '')}_${rgFile}`);
+              const flattenedTarget = path.join(target, flattenedName);
               copyFolderRecursiveSync(rgSource, flattenedTarget);
+            } else if (rgFile === 'page.tsx' && fs.existsSync(path.join(target, rgFile))) {
+              // If there's a conflict with page.tsx files, rename it
+              const newFileName = `${file.replace(/[()]/g, '')}_${rgFile}`;
+              fs.copyFileSync(rgSource, path.join(target, newFileName));
+              console.log(`⚠️ Renamed conflicting page: ${rgFile} to ${newFileName}`);
             } else {
-              // For files directly in route groups, just copy them to target
-              const rgTarget = path.join(target, rgFile);
-              fs.copyFileSync(rgSource, rgTarget);
+              // Regular file, just copy
+              fs.copyFileSync(rgSource, path.join(target, rgFile));
             }
           });
         } else {
@@ -40,50 +46,39 @@ function copyFolderRecursiveSync(source, target) {
           copyFolderRecursiveSync(curSource, curTarget);
         }
       } else {
-        // Check if the file is a page.tsx to make a naming detection
-        if (file === 'page.tsx' && path.basename(source).startsWith('(') && path.basename(source).endsWith(')')) {
-          // This is a page in a route group - we need to be careful
-          console.log(`⚠️ Found page in route group: ${source}`);
-          // We'll still copy it, but monitor for conflicts
-          fs.copyFileSync(curSource, curTarget);
-        } else {
-          // Regular file, just copy
-          fs.copyFileSync(curSource, curTarget);
-        }
+        // Regular file, copy
+        fs.copyFileSync(curSource, curTarget);
       }
     });
   }
 }
 
 try {
-  // First, check if we have route groups by scanning the app directory
+  // Only process the app directory to fix route conflicts
   const appDir = path.join(__dirname, 'app');
   
   if (fs.existsSync(appDir)) {
-    // Create a temporary directory to hold our restructured app
+    // Create a temporary directory to hold restructured app
     const tempDir = path.join(__dirname, 'app_temp');
     if (fs.existsSync(tempDir)) {
-      // Remove existing temp directory to start fresh
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
     fs.mkdirSync(tempDir, { recursive: true });
     
-    // Copy all files from app to app_temp, processing route groups
+    // Copy app directory to temp directory, processing route groups
     copyFolderRecursiveSync(appDir, tempDir);
     
-    // Now rename app to app_original and app_temp to app
+    // Backup original app directory
     const appOriginalDir = path.join(__dirname, 'app_original');
     if (fs.existsSync(appOriginalDir)) {
       fs.rmSync(appOriginalDir, { recursive: true, force: true });
     }
     
-    // Rename app to app_original
+    // Rename directories
     fs.renameSync(appDir, appOriginalDir);
-    
-    // Rename app_temp to app
     fs.renameSync(tempDir, appDir);
     
-    console.log('✅ App directory restructured successfully!');
+    console.log('✅ App directory restructured successfully for deployment!');
   } else {
     console.log('⚠️ App directory not found - nothing to restructure');
   }
@@ -91,4 +86,4 @@ try {
   console.error('❌ Error restructuring app directory:', error);
 }
 
-console.log('App directory preparation completed!'); 
+console.log('App directory preparation completed - deployment ready!'); 
