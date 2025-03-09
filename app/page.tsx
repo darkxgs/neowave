@@ -8,8 +8,14 @@ import { Button } from "@/components/ui/button"
 import { Database, ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 
+interface Product {
+  id: string
+  name: string
+  code?: string
+}
+
 export default function Home() {
-  const { selectedProducts, setSelectedProducts } = useProducts()
+  const { selectedProducts } = useProducts()
   const { isAuthenticated } = useAuth()
   const router = useRouter()
   
@@ -47,7 +53,7 @@ export default function Home() {
           <div className="mt-12 w-full">
             <h2 className="text-xl font-semibold text-[#40C4FF] mb-4">Selected Products</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {selectedProducts.map((product) => (
+              {selectedProducts.map((product: Product) => (
                 <div
                   key={product.id}
                   className="bg-[#2a3744] border border-[#3a4754] rounded-lg p-4 hover:border-[#40C4FF] transition-colors cursor-pointer"

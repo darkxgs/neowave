@@ -1,44 +1,35 @@
 "use client"
 
-import type React from "react"
-import { createContext, useState, useContext, type ReactNode } from "react"
+import React, { createContext, useState, useContext, ReactNode } from "react"
 
-type Product = {
+interface Product {
   id: string
   name: string
   code: string
+  [key: string]: any
 }
 
-type ProductContextType = {
+interface ProductContextType {
   selectedProducts: Product[]
-  addProduct: (product: Product) => void
-  removeProduct: (id: string) => void
+  setSelectedProducts: React.Dispatch<React.SetStateAction<Product[]>>
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined)
 
-export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export function ProductProvider({ children }: { children: ReactNode }) {
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
 
-  const addProduct = (product: Product) => {
-    setSelectedProducts((prev) => [...prev, product])
-  }
-
-  const removeProduct = (id: string) => {
-    setSelectedProducts((prev) => prev.filter((p) => p.id !== id))
-  }
-
   return (
-    <ProductContext.Provider value={{ selectedProducts, addProduct, removeProduct }}>
+    <ProductContext.Provider value={{ selectedProducts, setSelectedProducts }}>
       {children}
     </ProductContext.Provider>
   )
 }
 
-export const useProductContext = () => {
+export function useProducts() {
   const context = useContext(ProductContext)
   if (context === undefined) {
-    throw new Error("useProductContext must be used within a ProductProvider")
+    throw new Error("useProducts must be used within a ProductProvider")
   }
   return context
 }
