@@ -14,6 +14,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
+// Helper function to get cookie value
+const getCookie = (name: string): string | null => {
+  if (typeof document === 'undefined') return null
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+  return null
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const { data, error, mutate } = useSWR("/api/check-auth", fetcher, {
@@ -25,8 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log("Auth data changed:", data) // Debug log
     if (data) {
       setIsAuthenticated(data.authenticated)
+    } else if (error) {
+      // If KV-based auth fails, check for the fallback cookie
+      const authStatus = getCookie('auth_status')
+      if (authStatus === 'authenticated') {
+        console.log("Using fallback authentication via cookie")
+        setIsAuthenticated(true)
+      } else {
+        setIsAuthenticated(false)
+      }
     }
-  }, [data])
+  }, [data, error])
 
   const checkAuth = async () => {
     console.log("Checking auth...") // Debug log

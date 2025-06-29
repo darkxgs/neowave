@@ -23,11 +23,16 @@ export async function login(username: string, password: string) {
   try {
     if (username === "admin" && password === "neowave342") {
       const token = Math.random().toString(36).substr(2)
+      
+      // Try to store session in KV, but don't fail if it doesn't work
+      let kvSuccess = false
       try {
         await kv.set(`session:${token}`, { username }, { ex: 3600 }) // Expire in 1 hour
+        kvSuccess = true
+        console.log("KV session stored successfully")
       } catch (kvError) {
-        console.error("KV store error:", kvError)
-        return { success: false, error: "Error storing session. Please try again." }
+        console.error("KV store error (non-critical):", kvError)
+        // Continue with login even if KV fails
       }
 
       try {
@@ -41,13 +46,24 @@ export async function login(username: string, password: string) {
           sameSite: "strict",
           secure: process.env.NODE_ENV === "production",
         })
+        
+        // Also set a simple auth flag cookie that doesn't depend on KV
+        cookieStore.set({
+          name: "auth_status",
+          value: "authenticated",
+          httpOnly: false, // Allow client-side access
+          maxAge: 3600,
+          path: "/",
+          sameSite: "strict",
+          secure: process.env.NODE_ENV === "production",
+        })
+        
+        console.log("Login successful, token set:", token) // Debug log
+        return { success: true, kvSuccess }
       } catch (cookieError: any) {
         console.error("Cookie setting error:", cookieError)
         return { success: false, error: `Error setting authentication cookie: ${cookieError.message}` }
       }
-
-      console.log("Login successful, token set:", token) // Debug log
-      return { success: true }
     }
     console.log("Login failed: Invalid credentials") // Debug log
     return { success: false, error: "Invalid credentials" }
@@ -60,9 +76,18 @@ export async function login(username: string, password: string) {
 export async function logout() {
   const token = cookies().get("auth_token")?.value
   if (token) {
-    await kv.del(`session:${token}`)
-    cookies().delete("auth_token")
+    try {
+      await kv.del(`session:${token}`)
+    } catch (kvError) {
+      console.error("KV delete error (non-critical):", kvError)
+    }
   }
+  
+  // Clear all auth cookies
+  const cookieStore = cookies()
+  cookieStore.delete("auth_token")
+  cookieStore.delete("auth_status")
+  
   redirect("/")
 }
 
