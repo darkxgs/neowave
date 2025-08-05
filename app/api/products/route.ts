@@ -16,8 +16,17 @@ export async function GET() {
       throw new Error(`Database error: ${error.message}`)
     }
     
-    console.log("API: Products fetched successfully, count:", products?.length || 0)
-    return NextResponse.json(products || [])
+    // Transform snake_case to camelCase for frontend compatibility
+    const transformedProducts = products?.map(product => ({
+      ...product,
+      photoUrl: product.photo_url,
+      datasheetUrl: product.datasheet_url,
+      createdAt: product.created_at,
+      updatedAt: product.updated_at
+    })) || []
+    
+    console.log("API: Products fetched successfully, count:", transformedProducts.length)
+    return NextResponse.json(transformedProducts)
   } catch (error) {
     console.error("API: Error fetching products:", error)
     return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to fetch products" }, { status: 500 })
@@ -97,7 +106,18 @@ export async function POST(request: Request) {
     }
 
     console.log("API: Product saved successfully:", insertedProduct.id)
-    return NextResponse.json({ success: true, id: insertedProduct.id, photoUrl })
+    return NextResponse.json({ 
+      success: true, 
+      id: insertedProduct.id, 
+      photoUrl,
+      product: {
+        ...insertedProduct,
+        photoUrl: insertedProduct.photo_url,
+        datasheetUrl: insertedProduct.datasheet_url,
+        createdAt: insertedProduct.created_at,
+        updatedAt: insertedProduct.updated_at
+      }
+    })
   } catch (error) {
     console.error("API: Error creating product:", error)
     return NextResponse.json(

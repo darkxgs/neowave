@@ -506,7 +506,7 @@ export function ProductSelector() {
       const modelInfo = modelCharacteristics[modelOption.value as keyof typeof modelCharacteristics]
       if (!modelInfo) {
         // For custom products, check if they match ALL filters
-        const customProduct = customProducts.find((p) => p.code === modelOption.value)
+        const customProduct = customProducts.find((p) => p.code === modelOption.value || (p.code && p.code.split("-")[0] === modelOption.value.split("-")[0]))
         if (customProduct) {
           return activeFilters.every((filterId) => customProduct.filters?.includes(filterId))
         }
@@ -578,7 +578,7 @@ export function ProductSelector() {
     setDescription("")
 
     const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === modelId.split("-")[0],
+      (product) => product.code === modelId || (product.code && product.code.split("-")[0] === modelId.split("-")[0]),
     )
     if (customProduct) {
       console.log("Selected custom product:", customProduct)
@@ -600,9 +600,16 @@ export function ProductSelector() {
   const handleDatasheetDownload = () => {
     // First check if it's a custom product
     const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === model.split("-")[0],
+      (product) => product.code === model || (product.code && product.code.split("-")[0] === model.split("-")[0]),
     )
+    
+    console.log("Datasheet download - Model:", model)
+    console.log("Datasheet download - Custom products:", customProducts)
+    console.log("Datasheet download - Found custom product:", customProduct)
+    console.log("Datasheet download - Custom product datasheet URL:", customProduct?.datasheetUrl)
+    
     if (customProduct && customProduct.datasheetUrl) {
+      console.log("Opening custom product datasheet:", customProduct.datasheetUrl)
       window.open(customProduct.datasheetUrl, "_blank")
       return
     }
@@ -937,44 +944,25 @@ export function ProductSelector() {
                 </div>
                 {model && (
                   <div className="mt-4">
-                    {(customProducts.find((p) => p.code === model)?.photoUrl ||
+                    {(customProducts.find((p) => p.code === model || (p.code && p.code.split("-")[0] === model.split("-")[0]))?.photoUrl ||
                       sensorModels[selectedType]?.find((m) => m.id === model)?.imageUrl) && (
                       <div className="relative w-[200px] h-[200px]">
                         <Image
-                          src={
-                            customProducts.find((p) => p.code === model)?.photoUrl ||
-                            sensorModels[selectedType]?.find((m) => m.id === model)?.imageUrl ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg" ||
-                            "/placeholder.svg"
-                          }
+                          src={(() => {
+                            const customProduct = customProducts.find((p) => p.code === model || (p.code && p.code.split("-")[0] === model.split("-")[0]))
+                            const standardProduct = sensorModels[selectedType]?.find((m) => m.id === model)
+                            
+                            console.log("Image display - Model:", model)
+                            console.log("Image display - Custom product:", customProduct)
+                            console.log("Image display - Custom product photoUrl:", customProduct?.photoUrl)
+                            console.log("Image display - Standard product:", standardProduct)
+                            console.log("Image display - Standard product imageUrl:", standardProduct?.imageUrl)
+                            
+                            const imageUrl = customProduct?.photoUrl || standardProduct?.imageUrl || "/placeholder.svg"
+                            console.log("Image display - Final URL:", imageUrl)
+                            
+                            return imageUrl
+                          })()}
                           alt={`${model} Product Image`}
                           fill
                           className="rounded-lg border border-[#2a3744] object-contain bg-white"

@@ -5,7 +5,7 @@ import type { Filter } from "@/lib/FilterContext"
 export async function GET() {
   try {
     console.log("API: Fetching filters from Supabase")
-    
+
     const { data: filters, error } = await supabase
       .from('product_filters')
       .select('*')
@@ -29,7 +29,7 @@ export async function GET() {
   } catch (error) {
     console.error("API: Error fetching filters:", error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch filters" }, 
+      { error: error instanceof Error ? error.message : "Failed to fetch filters" },
       { status: 500 }
     )
   }
@@ -65,22 +65,24 @@ export async function POST(request: Request) {
       }
       console.error("API: Error saving filter:", error)
       return NextResponse.json(
-        { error: `Database error: ${error.message}` }, 
+        { error: `Database error: ${error.message}` },
         { status: 500 }
       )
     }
 
     console.log("API: Filter added successfully:", insertedFilter)
-    return NextResponse.json({ success: true, filter: {
-      id: insertedFilter.id,
-      name: insertedFilter.name,
-      typeId: insertedFilter.type_id,
-      predefined: insertedFilter.predefined
-    }})
+    return NextResponse.json({
+      success: true, filter: {
+        id: insertedFilter.id,
+        name: insertedFilter.name,
+        typeId: insertedFilter.type_id,
+        predefined: insertedFilter.predefined
+      }
+    })
   } catch (error) {
     console.error("API: Error adding filter:", error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to add filter" }, 
+      { error: error instanceof Error ? error.message : "Failed to add filter" },
       { status: 500 }
     )
   }
@@ -106,7 +108,7 @@ export async function DELETE(request: Request) {
     if (error) {
       console.error("API: Error deleting filter:", error)
       return NextResponse.json(
-        { error: `Database error: ${error.message}` }, 
+        { error: `Database error: ${error.message}` },
         { status: 500 }
       )
     }
@@ -116,7 +118,7 @@ export async function DELETE(request: Request) {
   } catch (error) {
     console.error("API: Error deleting filter:", error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete filter" }, 
+      { error: error instanceof Error ? error.message : "Failed to delete filter" },
       { status: 500 }
     )
   }
