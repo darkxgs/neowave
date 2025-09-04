@@ -22,8 +22,10 @@ export async function GET() {
             ? JSON.parse(product.specifications) 
             : product.specifications
           
-          // Filter out placeholder specifications (those with dots or empty values)
-          specifications = rawSpecs.filter(spec => {
+          // Ensure rawSpecs is an array before filtering
+          if (Array.isArray(rawSpecs)) {
+            // Filter out placeholder specifications (those with dots or empty values)
+            specifications = rawSpecs.filter(spec => {
             // Skip specifications with placeholder names or empty options
             if (!spec.name || spec.name === '.' || spec.name.trim() === '') {
               return false
@@ -48,6 +50,10 @@ export async function GET() {
             spec.options = validOptions
             return true
           })
+          } else {
+            // If rawSpecs is not an array, set specifications to empty array
+            specifications = []
+          }
         } catch (parseError) {
           console.error("Error parsing specifications for product:", product.id, parseError)
           specifications = []

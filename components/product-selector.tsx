@@ -190,7 +190,7 @@ export function ProductSelector() {
     if (!selectedType || !model) return []
 
     const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === model.split("-")[0],
+      (product) => product.code === model,
     )
     if (customProduct) {
       console.log("Found custom product specs:", customProduct.specifications)
@@ -205,7 +205,7 @@ export function ProductSelector() {
     if (!selectedType || !model) return []
 
     const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === model.split("-")[0],
+      (product) => product.code === model,
     )
     if (customProduct) {
       console.log("Getting spec options for:", specType)
@@ -250,7 +250,7 @@ export function ProductSelector() {
     if (!selectedType || !model) return ""
 
     const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === model.split("-")[0],
+      (product) => product.code === model,
     )
 
     // Handle custom products
@@ -528,7 +528,7 @@ export function ProductSelector() {
     if (!selectedType || !model || !specs) return ""
 
     const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === model.split("-")[0],
+      (product) => product.code === model,
     )
     if (customProduct) {
       const specDescriptions = customProduct.specifications
@@ -578,7 +578,7 @@ export function ProductSelector() {
     setDescription("")
 
     const customProduct = customProducts.find(
-      (product) => product.code && product.code.split("-")[0] === modelId.split("-")[0],
+      (product) => product.code === modelId,
     )
     if (customProduct) {
       console.log("Selected custom product:", customProduct)
