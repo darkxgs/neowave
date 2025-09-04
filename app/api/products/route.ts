@@ -17,20 +17,24 @@ export async function GET() {
       
       if (product.specifications) {
         try {
-          const parsed = typeof product.specifications === 'string' 
+          // Specifications are stored directly as JSON array
+          specifications = typeof product.specifications === 'string' 
             ? JSON.parse(product.specifications) 
             : product.specifications
-          
-          // Handle the combined format from database
-          if (parsed.specifications) {
-            specifications = parsed.specifications
-          }
-          if (parsed.filters) {
-            filters = parsed.filters
-          }
         } catch (parseError) {
           console.error("Error parsing specifications for product:", product.id, parseError)
           specifications = []
+        }
+      }
+      
+      // Parse filters if they exist (stored separately in the filters column)
+      if (product.filters) {
+        try {
+          filters = typeof product.filters === 'string' 
+            ? JSON.parse(product.filters) 
+            : product.filters
+        } catch (parseError) {
+          console.error("Error parsing filters for product:", product.id, parseError)
           filters = []
         }
       }
