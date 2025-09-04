@@ -86,6 +86,7 @@ export async function POST(request: Request) {
         console.log("API: Uploading photo to blob storage")
         const blob = await put(photo.name, photo, {
           access: "public",
+          addRandomSuffix: true
         })
         photoUrl = blob.url
         console.log("API: Photo uploaded successfully:", photoUrl)

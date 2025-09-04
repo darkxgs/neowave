@@ -242,7 +242,7 @@ export const filterDb = {
     return result.rows.map(row => ({
       id: row.filter_id,
       name: row.name,
-      type: row.type,
+      typeId: row.type,
       options: row.options
     }))
   },
@@ -250,14 +250,18 @@ export const filterDb = {
   async add(filter: any) {
     const result = await query(
       'INSERT INTO filters (filter_id, name, type, options) VALUES ($1, $2, $3, $4) RETURNING *',
-      [filter.id, filter.name, filter.type, JSON.stringify(filter.options)]
+      [filter.id, filter.name, filter.typeId || filter.type, JSON.stringify(filter.options || [])]
     )
     return {
       id: result.rows[0].filter_id,
       name: result.rows[0].name,
-      type: result.rows[0].type,
+      typeId: result.rows[0].type,
       options: result.rows[0].options
     }
+  },
+
+  async create(filter: any) {
+    return await this.add(filter)
   },
   
   async delete(filterId: string) {
