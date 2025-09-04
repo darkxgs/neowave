@@ -1,0 +1,6 @@
+id,name,types,created_at,updated_at
+hvac-control,HVAC control,"[{""id"":""smart-thermostat"",""name"":""Smart Thermostat""},{""id"":""damper-actuators"",""name"":""Damper Actuators""}]",2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00
+io-modules,I/O modules and data transmission,"[{""id"":""industrial-switches"",""name"":""Industrial switches""},{""id"":""io-modules"",""name"":""I/O modules""}]",2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00
+life-safety,Life Safety Systems,"[{""id"":""fire-alarm"",""name"":""Fire Alarm Systems""},{""id"":""gas-detectors"",""name"":""LPG & Natural Gas Detectors""}]",2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00
+power-energy,Power & Energy,"[{""id"":""btu-meters"",""name"":""BTU Meters""},{""id"":""water-meters"",""name"":""Water Meters""}]",2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00
+sensors-switches,Sensors and Switches,"[{""id"":""temp-humid"",""name"":""Temperature and humidity""},{""id"":""air-quality"",""name"":""Air Quality""},{""id"":""pressure"",""name"":""Pressure (Air & liquid)""},{""id"":""level"",""name"":""Level Measuring""},{""id"":""flow"",""name"":""Flow sensors (Air & liquid)""}]",2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00

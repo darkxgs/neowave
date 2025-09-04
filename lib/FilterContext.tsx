@@ -212,8 +212,12 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
       try {
         // Delete from API
-        const response = await fetch(`/api/filters?id=${id}`, {
+        const response = await fetch(`/api/filters`, {
           method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ filterId: id }),
         })
         
         if (!response.ok) {

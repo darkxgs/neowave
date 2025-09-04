@@ -1,0 +1,12 @@
+id,name,type_id,predefined,created_at,updated_at
+air-quality-all-quality-sensor-1754238848177,All Quality Sensor,air-quality,false,2025-08-03 16:34:08.256795+00,2025-08-03 16:34:08.256795+00
+air-quality-duct,Duct Mounted,air-quality,true,2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00
+air-quality-dust-1754225814812,Dust,air-quality,false,2025-08-03 12:56:55.474774+00,2025-08-03 12:56:55.474774+00
+air-quality-wall,Wall Mounted,air-quality,true,2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00
+pressure-differential,Differential,pressure,true,2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00
+pressure-gauge,Gauge,pressure,true,2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00
+temp-humid-duct,Duct Mounted,temp-humid,true,2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00
+temp-humid-indoor,Indoor,temp-humid,true,2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00
+temp-humid-outdoor,Outdoor,temp-humid,true,2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00
+temp-humid-wall-mounted-1754035693612,Wall-mounted,temp-humid,false,2025-08-01 08:08:14.849532+00,2025-08-01 08:08:14.849532+00
+temp-humid-water,Water Resistant,temp-humid,true,2025-07-31 19:07:31.0609+00,2025-07-31 19:07:31.0609+00
