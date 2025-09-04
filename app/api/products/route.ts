@@ -18,9 +18,36 @@ export async function GET() {
       if (product.specifications) {
         try {
           // Specifications are stored directly as JSON array
-          specifications = typeof product.specifications === 'string' 
+          const rawSpecs = typeof product.specifications === 'string' 
             ? JSON.parse(product.specifications) 
             : product.specifications
+          
+          // Filter out placeholder specifications (those with dots or empty values)
+          specifications = rawSpecs.filter(spec => {
+            // Skip specifications with placeholder names or empty options
+            if (!spec.name || spec.name === '.' || spec.name.trim() === '') {
+              return false
+            }
+            
+            // Filter out options that are placeholders
+            const validOptions = spec.options?.filter(option => 
+              option.code !== '.' && 
+              option.label !== '.' && 
+              option.value !== '.' &&
+              option.code?.trim() !== '' &&
+              option.label?.trim() !== '' &&
+              option.value?.trim() !== ''
+            ) || []
+            
+            // Only include specifications that have valid options
+            if (validOptions.length === 0) {
+              return false
+            }
+            
+            // Update the specification with filtered options
+            spec.options = validOptions
+            return true
+          })
         } catch (parseError) {
           console.error("Error parsing specifications for product:", product.id, parseError)
           specifications = []
