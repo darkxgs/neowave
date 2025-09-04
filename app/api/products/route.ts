@@ -17,15 +17,18 @@ export async function GET() {
       
       if (product.specifications) {
         try {
-          // Specifications are stored directly as JSON array
+          // Specifications are stored as an object with filters and specifications properties
           const rawSpecs = typeof product.specifications === 'string' 
             ? JSON.parse(product.specifications) 
             : product.specifications
           
-          // Ensure rawSpecs is an array before filtering
-          if (Array.isArray(rawSpecs)) {
+          // Extract the specifications array from the object
+          const specsArray = rawSpecs.specifications || rawSpecs
+          
+          // Ensure specsArray is an array before filtering
+          if (Array.isArray(specsArray)) {
             // Filter out placeholder specifications (those with dots or empty values)
-            specifications = rawSpecs.filter(spec => {
+            specifications = specsArray.filter(spec => {
             // Skip specifications with placeholder names or empty options
             if (!spec.name || spec.name === '.' || spec.name.trim() === '') {
               return false
@@ -60,7 +63,7 @@ export async function GET() {
         }
       }
       
-      // Parse filters if they exist (stored separately in the filters column)
+      // Parse filters if they exist (could be in filters column or within specifications object)
       if (product.filters) {
         try {
           filters = typeof product.filters === 'string' 
@@ -68,6 +71,17 @@ export async function GET() {
             : product.filters
         } catch (parseError) {
           console.error("Error parsing filters for product:", product.id, parseError)
+          filters = []
+        }
+      } else if (product.specifications) {
+        // Try to get filters from the specifications object
+        try {
+          const rawSpecs = typeof product.specifications === 'string' 
+            ? JSON.parse(product.specifications) 
+            : product.specifications
+          filters = rawSpecs.filters || []
+        } catch (parseError) {
+          console.error("Error parsing filters from specifications for product:", product.id, parseError)
           filters = []
         }
       }
