@@ -15,7 +15,31 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const { id } = params
-    const data = await request.json()
+    
+    // Handle both JSON and FormData
+    let data
+    const contentType = request.headers.get('content-type')
+    
+    if (contentType?.includes('multipart/form-data')) {
+      // Handle FormData (from data entry form)
+      const formData = await request.formData()
+      const dataString = formData.get("data") as string
+      
+      if (!dataString) {
+        return NextResponse.json({ success: false, error: "No product data provided" }, { status: 400 })
+      }
+      
+      try {
+        data = JSON.parse(dataString)
+      } catch (parseError) {
+        console.error("Error parsing product data:", parseError)
+        return NextResponse.json({ success: false, error: "Invalid product data format" }, { status: 400 })
+      }
+    } else {
+      // Handle JSON (from admin page)
+      data = await request.json()
+    }
+    
     const product = await productDb.update(id, data)
     return NextResponse.json({ success: true, product })
   } catch (error) {

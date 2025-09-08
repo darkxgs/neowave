@@ -191,8 +191,11 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
         formDataToSend.append("photo", photo)
       }
 
-      const response = await fetch("/api/products", {
-        method: "POST",
+      const url = editingProduct ? `/api/products/${editingProduct.id}` : "/api/products"
+      const method = editingProduct ? "PUT" : "POST"
+      
+      const response = await fetch(url, {
+        method: method,
         body: formDataToSend,
       })
 
@@ -203,9 +206,9 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
         throw new Error(result.error || "Failed to add product")
       }
 
-      console.log("Product added successfully:", result)
+      console.log(editingProduct ? "Product updated successfully:" : "Product added successfully:", result)
 
-      toast.success("Product added successfully!")
+      toast.success(editingProduct ? "Product updated successfully!" : "Product added successfully!")
       onProductAdded()
       resetForm()
     } catch (error) {
@@ -215,7 +218,7 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
         stack: error instanceof Error ? error.stack : undefined,
       })
 
-      toast.error(error instanceof Error ? `Error: ${error.message}` : "Failed to add product. Please try again.")
+      toast.error(error instanceof Error ? `Error: ${error.message}` : `Failed to ${editingProduct ? 'update' : 'add'} product. Please try again.`)
     }
   }
 
