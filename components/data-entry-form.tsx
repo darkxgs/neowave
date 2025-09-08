@@ -52,6 +52,8 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
   })
   const [specifications, setSpecifications] = useState<Specification[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
   const [photo, setPhoto] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const { categories } = useCategories()
@@ -68,24 +70,63 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
 
   useEffect(() => {
     if (editingProduct) {
+      console.log("Loading product for editing:", editingProduct)
+      
       setFormData({
         category: editingProduct.category || "",
         type: editingProduct.type || "",
         name: editingProduct.name || "",
-        datasheetUrl: editingProduct.datasheetUrl || "",
+        datasheetUrl: editingProduct.datasheet_url || editingProduct.datasheetUrl || "",
       })
-      setSpecifications(editingProduct.specifications || [])
+      
+      // Handle specifications - they might be in different formats
+      let specs = editingProduct.specifications || []
+      if (typeof specs === 'string') {
+        try {
+          specs = JSON.parse(specs)
+        } catch (e) {
+          console.error('Error parsing specifications:', e)
+          specs = []
+        }
+      }
+      
+      // If specifications are in nested format, extract them
+      if (specs && specs.specifications && Array.isArray(specs.specifications)) {
+        specs = specs.specifications
+      }
+      
+      setSpecifications(specs)
       setPhoto(editingProduct.photo || null)
-      setPhotoPreview(editingProduct.photoPreview || null)
+      setPhotoPreview(editingProduct.photo_url || editingProduct.photoPreview || null)
 
       // Set selected filters from the editing product
       if (editingProduct.filters) {
-        setSelectedFilters(editingProduct.filters)
+        setSelectedFilters(Array.isArray(editingProduct.filters) ? editingProduct.filters : [])
+      } else {
+        setSelectedFilters([])
       }
+      
+      console.log("Loaded specifications:", specs)
+      console.log("Loaded filters:", editingProduct.filters)
+      setIsDirty(false) // Mark as clean when loading existing product
     } else {
       resetForm()
     }
   }, [editingProduct])
+
+  // Warn user about unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty && !isSubmitting) {
+        e.preventDefault()
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
+        return e.returnValue
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isDirty, isSubmitting])
 
   // Get available filters for the selected type
   const availableFilters = useMemo(() => {
@@ -154,30 +195,56 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (isSubmitting) return // Prevent double submission
+    setIsSubmitting(true)
 
-    // Check if product name is provided
-    if (!formData.name) {
-      setErrors((prev) => ({ ...prev, name: "Product name is required" }))
-      setStep(3) // Move to the step with the name field
-      toast.error("Please provide a product name")
-      return
+    // Comprehensive validation
+    const validationErrors: Record<string, string> = {}
+    
+    if (!formData.name?.trim()) {
+      validationErrors.name = "Product name is required"
+    }
+    
+    if (!formData.category) {
+      validationErrors.category = "Category is required"
+    }
+    
+    if (!formData.type) {
+      validationErrors.type = "Type is required"
+    }
+    
+    if (specifications.length === 0) {
+      validationErrors.specifications = "At least one specification is required"
+    }
+    
+    if (formData.datasheetUrl && !isValidUrl(formData.datasheetUrl)) {
+      validationErrors.datasheetUrl = "Invalid URL format"
     }
 
-    // Check if category and type are provided
-    if (!formData.category || !formData.type) {
-      setErrors((prev) => ({
-        ...prev,
-        category: !formData.category ? "Category is required" : "",
-        type: !formData.type ? "Type is required" : "",
-      }))
-      setStep(1) // Move to the step with category/type fields
-      toast.error("Please select a category and type")
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
+      setIsSubmitting(false)
+      
+      // Navigate to the first step with errors
+      if (validationErrors.category || validationErrors.type) {
+        setStep(1)
+        toast.error("Please complete category and type selection")
+      } else if (validationErrors.name || validationErrors.datasheetUrl) {
+        setStep(3)
+        toast.error("Please check product details")
+      } else if (validationErrors.specifications) {
+        setStep(4)
+        toast.error("Please add at least one specification")
+      }
       return
     }
 
     try {
       const productData = {
         ...formData,
+        name: formData.name?.trim(),
+        description: formData.description?.trim() || '',
         specifications,
         filters: selectedFilters,
         code: formData.name ? generateProductCode(formData, specifications) : "",
@@ -203,22 +270,37 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
 
       if (!response.ok || !result.success) {
         console.error("Server error:", result)
-        throw new Error(result.error || "Failed to add product")
+        throw new Error(result.error || `Failed to ${editingProduct ? 'update' : 'add'} product`)
       }
 
       console.log(editingProduct ? "Product updated successfully:" : "Product added successfully:", result)
 
-      toast.success(editingProduct ? "Product updated successfully!" : "Product added successfully!")
+      const successMessage = editingProduct 
+        ? `Product "${formData.name}" updated successfully!` 
+        : `Product "${formData.name}" added successfully!`
+      
+      toast.success(successMessage)
+      setIsDirty(false) // Mark form as clean after successful submission
       onProductAdded()
-      resetForm()
+      
+      // Only reset form when adding a new product, not when updating
+      if (!editingProduct) {
+        resetForm()
+      }
     } catch (error) {
-      console.error("Error adding product:", {
+      console.error("Error processing product:", {
         error,
         message: error instanceof Error ? error.message : "Unknown error",
         stack: error instanceof Error ? error.stack : undefined,
       })
 
-      toast.error(error instanceof Error ? `Error: ${error.message}` : `Failed to ${editingProduct ? 'update' : 'add'} product. Please try again.`)
+      const errorMessage = error instanceof Error 
+        ? `Error: ${error.message}` 
+        : `Failed to ${editingProduct ? 'update' : 'add'} product. Please try again.`
+      
+      toast.error(errorMessage)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -226,12 +308,16 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { name: string; value: string },
   ) => {
     const { name, value } = e.target ? e.target : e
+    setIsDirty(true) // Mark form as dirty when user makes changes
     setFormData((prev) => {
       if (name === "category") {
         return { ...prev, [name]: value, type: "" }
       }
       if (name === "type") {
-        setSelectedFilters([]) // Reset selected filters when type changes
+        // Only reset selected filters when creating a new product, not when editing
+        if (!editingProduct) {
+          setSelectedFilters([]) // Reset selected filters when type changes
+        }
         return { ...prev, [name]: value }
       }
       return { ...prev, [name]: value }
@@ -382,6 +468,8 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
     setPhoto(null)
     setPhotoPreview(null)
     setSelectedFilters([])
+    setIsDirty(false)
+    setIsSubmitting(false)
   }
 
   const generateProductCode = (formData: any, specifications: Specification[]) => {
@@ -422,10 +510,40 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
   return (
     <Card className="bg-[#1B2531] border-[#2a3744]">
       <CardHeader>
-        <CardTitle className="text-[#40C4FF] text-xl font-normal">
-          {editingProduct ? "Edit Product" : "Add New Product"}
-        </CardTitle>
+        <div className="flex justify-between items-center mb-2">
+          <div>
+            <CardTitle className="text-[#40C4FF] text-xl font-normal">
+              {editingProduct ? "Edit Product" : "Add New Product"}
+            </CardTitle>
+            {editingProduct && isDirty && (
+              <p className="text-sm text-yellow-400 mt-1">
+                ⚠️ You have unsaved changes
+              </p>
+            )}
+          </div>
+          <div className="text-sm text-gray-400">
+            Step {step} of {totalSteps}
+          </div>
+        </div>
         <Progress value={progress} className="w-full mt-2" />
+        {/* Progress indicator with step names */}
+        <div className="flex justify-between text-xs text-gray-400 mt-2">
+          <span className={step >= 1 ? "text-[#40C4FF]" : ""}>
+            Category & Type
+          </span>
+          <span className={step >= 2 ? "text-[#40C4FF]" : ""}>
+            Filters
+          </span>
+          <span className={step >= 3 ? "text-[#40C4FF]" : ""}>
+            Product Details
+          </span>
+          <span className={step >= 4 ? "text-[#40C4FF]" : ""}>
+            Specifications
+          </span>
+          <span className={step >= 5 ? "text-[#40C4FF]" : ""}>
+            Review
+          </span>
+        </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -797,46 +915,109 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
 
               {step === 5 && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-white">Review and Submit</h3>
-                  <div className="space-y-2">
-                    <p className="text-gray-300">
-                      <span className="font-medium">Category:</span> {formData.category}
-                    </p>
-                    <p className="text-gray-300">
-                      <span className="font-medium">Type:</span> {formData.type}
-                    </p>
-                    {selectedFilters.length > 0 && (
-                      <div className="text-gray-300">
-                        <span className="font-medium">Filters:</span>{" "}
-                        {selectedFilters
-                          .map((filterId) => {
-                            const filter = availableFilters.find((f) => f.id === filterId)
-                            return filter ? filter.name : ""
-                          })
-                          .join(", ")}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-white mb-4">
+                      {editingProduct ? "Review Changes" : "Review Product Details"}
+                    </h3>
+                    {editingProduct && (
+                      <Badge variant="outline" className="text-yellow-400 border-yellow-400">
+                        Editing Mode
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {editingProduct && (
+                    <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                        <span className="text-blue-400 font-medium">Update Summary</span>
+                      </div>
+                      <p className="text-gray-300 text-sm">
+                        You are updating product: <span className="text-white font-medium">{editingProduct.name}</span>
+                      </p>
+                      <p className="text-gray-400 text-xs mt-1">
+                        Only modified fields will be updated. Your existing data will be preserved.
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="bg-[#2a3744] rounded-lg p-4 space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-gray-300">Category</Label>
+                        <p className="text-white">{formData.category}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-300">Type</Label>
+                        <p className="text-white">{formData.type}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-300">Product Name</Label>
+                        <p className="text-white">{formData.name}</p>
+                      </div>
+                      <div>
+                        <Label className="text-gray-300">Product Code</Label>
+                        <p className="text-white">{generateProductCode(formData, specifications)}</p>
+                      </div>
+                    </div>
+                    {formData.description && (
+                      <div>
+                        <Label className="text-gray-300">Description</Label>
+                        <p className="text-white">{formData.description}</p>
                       </div>
                     )}
-                    <p className="text-gray-300">
-                      <span className="font-medium">Name:</span> {formData.name}
-                    </p>
-                    <p className="text-gray-300">
-                      <span className="font-medium">Datasheet URL:</span> {formData.datasheetUrl}
-                    </p>
-                    {photo && (
-                      <p className="text-gray-300">
-                        <span className="font-medium">Photo:</span> {photo.name}
-                      </p>
+                    {formData.datasheetUrl && (
+                      <div>
+                        <Label className="text-gray-300">Datasheet URL</Label>
+                        <p className="text-white">{formData.datasheetUrl}</p>
+                      </div>
                     )}
-                    <div className="text-gray-300">
-                      <span className="font-medium">Specifications:</span>
-                      <ul className="list-disc list-inside ml-4 mt-2">
-                        {specifications.map((spec, index) => (
-                          <li key={index}>
-                            {spec.name}: {spec.options.map((opt) => opt.label).join(", ")}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    {selectedFilters.length > 0 && (
+                      <div>
+                        <Label className="text-gray-300">Selected Filters ({selectedFilters.length})</Label>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {selectedFilters.map((filterId) => {
+                            const filter = availableFilters.find((f) => f.id === filterId)
+                            return filter ? (
+                              <Badge key={filter.id} className="bg-[#40C4FF]">
+                                {filter.name}
+                              </Badge>
+                            ) : null
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {specifications.length > 0 && (
+                      <div>
+                        <Label className="text-gray-300">Specifications ({specifications.length})</Label>
+                        <div className="space-y-2 mt-2">
+                          {specifications.map((spec, index) => (
+                            <div key={index} className="bg-[#1B2531] rounded p-3">
+                              <p className="text-white font-medium">{spec.name}</p>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {spec.options.map((option, optIndex) => (
+                                  <Badge key={optIndex} variant="outline" className="text-xs">
+                                    {option.label} ({option.code})
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {photoPreview && (
+                      <div>
+                        <Label className="text-gray-300">Product Photo</Label>
+                        <div className="mt-2">
+                          <img
+                            src={photoPreview}
+                            alt="Product preview"
+                            className="w-32 h-32 object-cover rounded-lg border border-[#3a4754]"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -902,8 +1083,17 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
               </Button>
             )}
             {step === totalSteps && (
-              <Button type="submit" className="bg-[#40C4FF] text-white hover:bg-blue-400">
-                <Save className="w-4 h-4 mr-2" /> {editingProduct ? "Update Product" : "Add Product"}
+              <Button type="submit" className="bg-[#40C4FF] text-white hover:bg-blue-400" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {editingProduct ? "Updating..." : "Adding..."}
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" /> {editingProduct ? "Update Product" : "Add Product"}
+                  </>
+                )}
               </Button>
             )}
           </div>
