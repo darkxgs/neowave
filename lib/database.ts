@@ -159,14 +159,21 @@ export const productDb = {
   },
   
   async update(id: string, productData: any) {
-    const { code, type, category, name, description, specifications, photoUrl, datasheetUrl } = productData
+    const { code, type, category, name, description, specifications, filters, photoUrl, datasheetUrl } = productData
+    
+    // Combine specifications and filters into the specifications JSONB field (same as create)
+    const specsWithFilters = {
+      specifications: specifications || [],
+      filters: filters || []
+    }
+    
     const result = await query(
       `UPDATE products 
        SET code = $2, type = $3, category = $4, name = $5, description = $6, 
            specifications = $7, photo_url = $8, datasheet_url = $9, updated_at = NOW() 
        WHERE id = $1 
        RETURNING *`,
-      [id, code, type, category, name, description, JSON.stringify(specifications), photoUrl, datasheetUrl]
+      [id, code, type, category, name, description, JSON.stringify(specsWithFilters), photoUrl, datasheetUrl]
     )
     return result.rows[0]
   },
