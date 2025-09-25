@@ -159,7 +159,11 @@ export const productDb = {
   },
   
   async update(id: string, productData: any) {
-    const { code, type, category, name, description, specifications, filters, photoUrl, datasheetUrl } = productData
+    const { code, type, category, name, description, specifications, filters, photo_url, photoUrl, datasheet_url, datasheetUrl } = productData
+    
+    // Handle both photo_url and photoUrl for backward compatibility
+    const finalPhotoUrl = photo_url || photoUrl
+    const finalDatasheetUrl = datasheet_url || datasheetUrl
     
     // Combine specifications and filters into the specifications JSONB field (same as create)
     const specsWithFilters = {
@@ -173,7 +177,7 @@ export const productDb = {
            specifications = $7, photo_url = $8, datasheet_url = $9, updated_at = NOW() 
        WHERE id = $1 
        RETURNING *`,
-      [id, code, type, category, name, description, JSON.stringify(specsWithFilters), photoUrl, datasheetUrl]
+      [id, code, type, category, name, description, JSON.stringify(specsWithFilters), finalPhotoUrl, finalDatasheetUrl]
     )
     return result.rows[0]
   },

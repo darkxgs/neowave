@@ -256,6 +256,9 @@ export function DataEntryForm({ onProductAdded, editingProduct }: DataEntryFormP
       formDataToSend.append("data", JSON.stringify(productData))
       if (photo) {
         formDataToSend.append("photo", photo)
+        console.log("Including new photo in FormData:", photo.name)
+      } else if (editingProduct && !photo) {
+        console.log("No new photo provided, keeping existing photo URL")
       }
 
       const url = editingProduct ? `/api/products/${editingProduct.id}` : "/api/products"

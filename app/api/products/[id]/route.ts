@@ -17,6 +17,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   try {
     const { id } = params
     
+    // Get the existing product first to preserve photo URL if needed
+    const existingProduct = await productDb.getById(id)
+    
     // Handle both JSON and FormData
     let data
     let photoUrl = ""
@@ -27,6 +30,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       const formData = await request.formData()
       const dataString = formData.get("data") as string
       const photo = formData.get("photo") as File | null
+      
+      console.log("API UPDATE: FormData received")
+      console.log("API UPDATE: Photo present:", !!photo)
+      console.log("API UPDATE: Photo size:", photo?.size || 0)
+      console.log("API UPDATE: Photo name:", photo?.name || "none")
       
       if (!dataString) {
         return NextResponse.json({ success: false, error: "No product data provided" }, { status: 400 })
@@ -56,6 +64,13 @@ export async function PUT(request: Request, { params }: { params: { id: string }
           console.error("API: Error uploading photo:", blobError)
           console.log("API: Continuing without photo upload")
           // Continue without photo instead of failing the entire request
+        }
+      } else {
+        console.log("API UPDATE: No new photo provided, keeping existing photo")
+        // Keep the existing photo URL if no new photo is provided
+        if (existingProduct && existingProduct.photo_url) {
+          data.photo_url = existingProduct.photo_url
+          console.log("API UPDATE: Preserving existing photo URL:", existingProduct.photo_url)
         }
       }
     } else {
